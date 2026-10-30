@@ -2,7 +2,9 @@
 
 Dataset screening for **Project 2, Version 2 (with data)**: a classification project presented in at most 6 slides. The brief is in [`Project 2.pdf`](Project%202.pdf).
 
-The aim is a **semiconductor-related use case**. The notebook checks each candidate dataset against what the slides grade, so the choice is evidence-based.
+The aim is a **semiconductor-related use case**. The notebook runs the same checks on every candidate dataset, mapped to what the slides grade, so the choice rests on evidence from the real data.
+
+**Decision: D2, WM-811K wafer maps, Edge-Loc vs Loc.** The cleaned MixedWM38 Scratch task (K) is the semiconductor alternative, and Steel Plates (E) is the non-semiconductor fallback.
 
 ## What the project has to show
 - A classification task whose **evaluation loss deviates from misclassification**, with the threshold chosen to minimise that loss.
@@ -16,25 +18,25 @@ The aim is a **semiconductor-related use case**. The notebook checks each candid
 | Path | What it is |
 |---|---|
 | `Project 2.pdf` | Project brief (lecture slides) |
-| `EDA/Project2_Dataset_EDA.ipynb` | Screening notebook: the same checks on every candidate, a scorecard, and the ranking |
-| `EDA/output.csv` | Scorecard export from a full local run |
+| `EDA/Project2_Dataset_EDA.ipynb` | Screening notebook: per-dataset checks, the scorecard, the MixedWM38 artefact check, and the final ranking (last cell). Its saved outputs are the round 3 local run. |
+| `EDA/output.csv` | Scorecard export from the **first** local run (A–J only, without row labels). The current scorecard is in the notebook. |
 
 ## Datasets screened
-| # | Dataset | Source | Notes |
+| # | Dataset | Source | Verdict from the run |
 |---|---|---|---|
-| A | AI4I 2020 predictive maintenance | Kaggle `shivamb/machine-predictive-maintenance-classification` | Synthetic, 3.4% positive |
-| B | Semiconductor wafer defect (synthetic) | Kaggle `meruvakodandasuraj/semiconductor-wafer-defect-classification-dataset` | **Excluded**: 7 positives |
-| C | MachineHack wafer anomalies | Kaggle `arbazkhan971/anomaly-detection` | 1,558 anonymous features |
-| D | WM-811K wafer maps, any pattern vs none | Kaggle `qingyi/wm811k-wafer-map` | Near-perfect (AUC 0.995) |
-| D2 | WM-811K, Edge-Loc vs Loc | same | Harder pairwise task |
-| E | Steel plates faults | Kaggle `uciml/faulty-steel-plates` | Real data, named features |
-| F | Machine failure (sensors) | Kaggle `umerrtx/machine-failure-prediction-using-sensor-data` | Small; glassbox beats blackbox |
-| G | Predicting manufacturing defects | Kaggle `rabieelkharoua/predicting-manufacturing-defects-dataset` | Synthetic; defects are the 84% majority |
-| H | APS failure at Scania trucks | Kaggle `uciml/aps-failure-at-scania-trucks-data-set` | Official 10/500 cost; anonymous features, missing data |
-| I | SECOM | Kaggle `paresh2047/uci-semcom` | Anonymous features, missing data |
-| J | Singapore rain tomorrow | data.gov.sg `d_03bb2eb67ad645d0188342fa74ad7066` | Weak signal, 16% missing |
-| K | MixedWM38 mixed-type wafer maps, Scratch vs not | Kaggle `co1d7era/mixedtype-wafer-defect-datasets` | Easy to load; partly GAN-generated |
-| L | Semiconductor sensor data (simulated) | Kaggle `programmer3/semiconductor-sensor-data-for-predictive-quality` | Not loaded (Kaggle 403) |
+| A | AI4I 2020 predictive maintenance | Kaggle `shivamb/machine-predictive-maintenance-classification` | Rank 4. Synthetic, 3.4% positive |
+| B | Semiconductor wafer defect (synthetic) | Kaggle `meruvakodandasuraj/semiconductor-wafer-defect-classification-dataset` | Excluded: 7 positives |
+| C | MachineHack wafer anomalies | Kaggle `arbazkhan971/anomaly-detection` | Excluded: 1,558 anonymous features, heavy cleaning |
+| D | WM-811K wafer maps, any pattern vs none | Kaggle `qingyi/wm811k-wafer-map` | Rank 7. Near-perfect (AUC 0.995) |
+| **D2** | **WM-811K, Edge-Loc vs Loc** | same | **Rank 1** |
+| E | Steel plates faults, Bumps vs rest | Kaggle `uciml/faulty-steel-plates` | Rank 3 |
+| F | Machine failure (sensors) | Kaggle `umerrtx/machine-failure-prediction-using-sensor-data` | Rank 6. Glassbox beats blackbox |
+| G | Predicting manufacturing defects | Kaggle `rabieelkharoua/predicting-manufacturing-defects-dataset` | Rank 5. Synthetic; 4% threshold saving |
+| H | APS failure at Scania trucks | Kaggle `uciml/aps-failure-at-scania-trucks-data-set` | Excluded: anonymous, missing data, 1.7% positive |
+| I | SECOM | Kaggle `paresh2047/uci-semcom` | Excluded: anonymous, missing data, 21 validation positives |
+| J | Singapore rain tomorrow | data.gov.sg `d_03bb2eb67ad645d0188342fa74ad7066` | Excluded: weak signal (AUC 0.62), 16% missing |
+| K | MixedWM38 mixed-type wafer maps, Scratch vs not | Kaggle `co1d7era/mixedtype-wafer-defect-datasets` | Rank 2, **cleaned version only** |
+| L | Semiconductor sensor data (simulated) | Kaggle `programmer3/semiconductor-sensor-data-for-predictive-quality` | Not assessed: Kaggle returned 403 |
 
 The wafer-map datasets (D, D2, K) are turned into 10 named spatial features per wafer (zone fail rates, cluster size and radius, angular concentration), so tabular models and tree SHAP apply.
 
@@ -52,14 +54,18 @@ The wafer-map datasets (D, D2, K) are turned into 10 named spatial features per 
 
 A 20% test split is held out before any check that uses labels. All the models are untuned, so these are feasibility signals, not results for the slides.
 
-## Current ranking (from the round 2 local run on the real datasets)
-| Rank | Dataset | Summary |
-|---|---|---|
-| **1** | **D2 · WM-811K Edge-Loc vs Loc** | Semiconductor, real fab data. Every check passes except preprocessing. About 1,038 validation positives, so the estimates are stable. Glassbox 0.963 vs blackbox 0.974. The best threshold (0.26) matches the cost ratio (0.25). The 2 GB legacy pickle needs preprocessing. |
-| **2 (provisional)** | **K · MixedWM38, Scratch vs not** | Semiconductor and easy to load. The largest stable model gap (0.685 vs 0.917). `n_dies` is the top SHAP driver (39%), and whether that's real signal or an artefact hasn't been tested on the real data yet. The data also has 1,024 duplicate rows and GAN-generated maps. **Provisional until the artefact check (notebook cell 66) is run locally.** |
-| **3** | **E · Steel plates, Bumps vs rest** | Non-semiconductor fallback. Real, clean data, a stable gap (+0.085), and SHAP spread over several features. |
+## Final ranking (round 3 local run on the real datasets)
+| Rank | Dataset | Evidence | Main risk |
+|---|---|---|---|
+| **1** | **D2 · WM-811K Edge-Loc vs Loc** (semiconductor, real) | All checks pass except preprocessing. 1,038 validation positives (AUC ± 0.005). Glassbox 0.963 vs blackbox 0.974; the gap (+0.011, sd 0.002) is stable. Best threshold 0.26 ≈ cost-ratio threshold 0.25. The L2 glassbox is clearly worse calibrated (ECE 0.10 vs 0.027). SHAP top `largest_cluster_radius` (44%), physically meaningful. | The small gap makes the decision "choose the glassbox". Needs the 2 GB legacy pickle and feature extraction. |
+| **2** | **K · MixedWM38 Scratch, cleaned** (semiconductor) | The artefact check confirmed `n_dies` is a shortcut: Scratch wafers have 2,061–2,065 dies (sd 0.6), others 1,843–2,234 (sd 21.7). The 1,024 duplicate rows are 97.7% Scratch. After deduplicating and dropping `n_dies`: glassbox 0.617 vs blackbox 0.876, the largest gap of any candidate. | Calibration, noise, threshold and SHAP not yet rerun on the cleaned data. The 50% prevalence is artificial (GAN balancing). A 0.617 logistic is a weak glassbox: try a shallow tree, EBM or FIGS. |
+| **3** | **E · Steel plates, Bumps vs rest** (real, not semiconductor) | No cleaning, no missing data. Glassbox 0.839 vs blackbox 0.923 (+0.085, sd 0.017). Threshold saving 77%. SHAP spread out (top feature 11%). | Not semiconductor. Correlated pairs (use LASSO). About 8 validation positives per calibration bin. |
+| 4 | A · AI4I | Gap +0.077 (sd 0.015); a glassbox with physics features reaches 0.914. | Synthetic, 3.4% positive, 27 contradictory labels, heavily used on Kaggle. |
+| 5 | G · Manufacturing defects | No flags. Gap +0.071. | Threshold saving 4%, synthetic, defects are the 84% majority. |
+| 6 | F · Machine failure | Clean. | The glassbox beats the blackbox (the blackbox wins in 4% of draws); `VOC` carries 42% of SHAP. |
+| 7 | D · WM-811K, any pattern vs none | Stable. | Near-perfect (0.995). Superseded by D2. |
 
-The full reasoning is in the last cell of the notebook.
+The flag-count summary in the notebook puts G first. The ranking above also weighs the model-decision story, the threshold story, real vs synthetic data, and semiconductor relevance. The full reasoning is in the last cell of the notebook.
 
 ## How to run
 ```bash
@@ -71,7 +77,7 @@ pip install kagglehub pandas numpy scikit-learn scipy matplotlib shap requests
 3. WM-811K needs several GB of RAM to load the full pickle.
 
 ## Next steps
-1. Run the MixedWM38 artefact check locally (notebook cell 66, after cells 63–64), then choose between D2 and K.
-2. Fill in Kaggle usability ratings and public notebook counts in the `KAGGLE_META` table.
-3. Fix the business setting and cost ratio (FN:FP) for the chosen dataset before tuning anything.
-4. Build the modelling pipeline in a new notebook. Keep the explorations few and deliberate to avoid overfitting the validation set (the slides call this the "optimizer's curse"), and look at the test split once.
+1. Fix the business setting and cost ratio (FN:FP) for D2 before tuning anything. For example: misrouting an Edge-Loc wafer to the interior-defect team vs the reverse.
+2. Build the modelling pipeline for D2 in a new notebook, reusing the held-out test split (same `SEED`). Keep the explorations few and deliberate to avoid overfitting the validation set (the slides call this the "optimizer's curse"), and look at the test split once.
+3. Optional: if K is still of interest, rerun the extra checks (calibration, noise, threshold, SHAP) on the cleaned K data before comparing it with D2.
+4. Fill in Kaggle usability ratings and public notebook counts in the `KAGGLE_META` table.
