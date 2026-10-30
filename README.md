@@ -52,11 +52,11 @@ The wafer-map datasets (D, D2, K) are turned into 10 named spatial features per 
 
 A 20% test split is held out before any check that uses labels. All the models are untuned, so these are feasibility signals, not results for the slides.
 
-## Current ranking (from the round 2 local run)
+## Current ranking (from the round 2 local run on the real datasets)
 | Rank | Dataset | Summary |
 |---|---|---|
 | **1** | **D2 · WM-811K Edge-Loc vs Loc** | Semiconductor, real fab data. Every check passes except preprocessing. About 1,038 validation positives, so the estimates are stable. Glassbox 0.963 vs blackbox 0.974. The best threshold (0.26) matches the cost ratio (0.25). The 2 GB legacy pickle needs preprocessing. |
-| **2** | **K · MixedWM38, Scratch vs not** | Semiconductor and easy to load. The largest stable model gap (0.685 vs 0.917). However, `n_dies` is the top SHAP driver and is probably an artefact, and the data has duplicates and GAN-generated maps. Run the artefact check before choosing it. |
+| **2 (provisional)** | **K · MixedWM38, Scratch vs not** | Semiconductor and easy to load. The largest stable model gap (0.685 vs 0.917). `n_dies` is the top SHAP driver (39%), and whether that's real signal or an artefact hasn't been tested on the real data yet. The data also has 1,024 duplicate rows and GAN-generated maps. **Provisional until the artefact check (notebook cell 66) is run locally.** |
 | **3** | **E · Steel plates, Bumps vs rest** | Non-semiconductor fallback. Real, clean data, a stable gap (+0.085), and SHAP spread over several features. |
 
 The full reasoning is in the last cell of the notebook.
@@ -71,7 +71,7 @@ pip install kagglehub pandas numpy scikit-learn scipy matplotlib shap requests
 3. WM-811K needs several GB of RAM to load the full pickle.
 
 ## Next steps
-1. Run the MixedWM38 artefact check (the cell after section K), then choose between D2 and K.
+1. Run the MixedWM38 artefact check locally (notebook cell 66, after cells 63–64), then choose between D2 and K.
 2. Fill in Kaggle usability ratings and public notebook counts in the `KAGGLE_META` table.
 3. Fix the business setting and cost ratio (FN:FP) for the chosen dataset before tuning anything.
 4. Build the modelling pipeline in a new notebook. Keep the explorations few and deliberate to avoid overfitting the validation set (the slides call this the "optimizer's curse"), and look at the test split once.
