@@ -3,7 +3,7 @@
 Runs the code cells of Project2_Classification.ipynb, then draws from the
 resulting objects, so every slide figure uses the notebook's own numbers.
 
-Usage (from the project folder): python make_slide_figures.py
+Usage (from anywhere): python slides/make_slide_figures.py
 """
 import json
 import os
@@ -14,8 +14,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-OUT = "slide_figures"
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, "figures")
 os.makedirs(OUT, exist_ok=True)
+os.chdir(os.path.join(HERE, "..", "project"))      # the notebook reads data/ relative to its own folder
 
 # Run the notebook's code with plotting and display switched off
 ns = {"display": lambda *a, **k: None}

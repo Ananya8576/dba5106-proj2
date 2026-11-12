@@ -1,0 +1,19 @@
+<section id="shap" data-transition="fade" style="background:#fcfcfb;color:#14213d;font-family:'Inter', Arial, sans-serif;padding:88px 112px 128px;display:flex;flex-direction:column;gap:28px">
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1">Tree SHAP on the blackbox: it looks at the edge</h2>
+<div style="display:flex;gap:56px;align-items:flex-start">
+<div style="display:flex;flex-direction:column;gap:12px;width:700px">
+<h3 style="font-size:30px;font-weight:600">Global: what the model relies on</h3>
+<img src="/_blob/42b06f77e794fed7e912565e9f90ab6c" alt="Mean absolute SHAP value per feature. largest_cluster_radius is far ahead at 4.0, then edge_fail_rate at 1.8 and outer_ring_fail_rate at 0.9." style="width:700px;height:516px;object-fit:contain">
+<p style="font-size:24px;line-height:1.35;color:#4a5568">Where the largest cluster sits dominates, then the edge fail rates.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:30px;font-weight:600">Local: two wafers, next to their maps</h3>
+<p style="font-size:24px;line-height:1.35;color:#4a5568"><b>Most confident Edge-Loc.</b> P(Edge-Loc) = 1.000. The cluster is at the edge (radius 0.93).</p>
+<img src="/_blob/c16d86360bd0ca66db8d24b4d79b20d6" alt="Wafer map with failing dies along the top edge, beside its SHAP values. largest_cluster_radius = 0.93 pushes strongly towards Edge-Loc." style="width:800px;height:240px;object-fit:contain">
+<p style="font-size:24px;line-height:1.35;color:#4a5568"><b>Costliest mistake.</b> Labelled Edge-Loc, P = 0.000. Its cluster is near the centre (radius 0.32). Possibly a labelling error.</p>
+<img src="/_blob/524d87b2d56d595942323cb14d84496a" alt="Wafer map with a cluster of failing dies near the centre, beside its SHAP values. largest_cluster_radius = 0.32 pushes strongly towards Loc." style="width:800px;height:240px;object-fit:contain">
+</div>
+</div>
+<p style="position:absolute;left:112px;bottom:56px;width:1600px;font-size:24px;color:#6a7179">Caution: the fail-rate features are correlated, so SHAP credit among them is unstable. Orange pushes towards Edge-Loc, blue towards Loc.</p>
+<aside>The brief requires tree SHAP on a tree-based blackbox even though we chose the glassbox. We applied it to the log-loss gradient-boosted trees, on the validation split. Global: the mean absolute SHAP value per feature. The radius of the largest cluster is far ahead at 4.0, then the edge fail rate at 1.8 and the outer ring fail rate at 0.9. The model asks the question an engineer would: is the cluster at the edge? Local: two wafers picked by rule, not by hand. The most confident Edge-Loc: the cluster is at the edge and that one feature carries most of the prediction. The costliest mistake: a wafer labelled Edge-Loc that the model scores as Loc. Its largest cluster is near the centre, and the glassbox agrees with the blackbox, so this may be a labelling error. Cautions: the fail-rate features are correlated, so the ranking among them is not reliable. And the glassbox is not automatically readable either: its coefficients have large opposite signs for the same reason. SHAP values add up exactly to the model's output.</aside>
+</section>

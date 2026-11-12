@@ -130,7 +130,9 @@ These are the places where the project departs from the brief or is weaker than 
 |---|---|
 | `Project 2.pdf` | Project brief (lecture slides) |
 | `project/Project2_Classification.ipynb` | **The project**: all requirements, with outputs |
-| `project/SLIDES.md` | Outline for the 6 slides, with the numbers and figures to use |
+| `slides/SLIDES.md` | Outline for the 6 slides, and the link to the deck |
+| `slides/deck/` | The six slides as published |
+| `slides/figures/` | Slide-sized figures, drawn by `slides/make_slide_figures.py` |
 | `project/figures/` | Figures saved by the notebook |
 | `project/build_features.py` | Builds the feature table and wafer maps from the Kaggle file |
 | `project/data/` | The feature table (8,782 wafers) and their wafer maps |
@@ -210,5 +212,5 @@ pip install kagglehub pandas numpy scikit-learn scipy matplotlib shap requests
 
 ## Next steps
 1. Check the Kaggle usability rating for `qingyi/wm811k-wafer-map`.
-2. Build the 6 slides from `project/SLIDES.md`.
+2. Download the deck as PowerPoint from the link in `slides/SLIDES.md`, and rehearse with its speaker notes.
 3. Decide how to defend the 5:1 cost ratio in the Q&A, or replace it with a figure you can source.

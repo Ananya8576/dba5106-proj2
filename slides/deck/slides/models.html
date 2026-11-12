@@ -1,0 +1,26 @@
+<section id="models" data-transition="fade" style="background:#fcfcfb;color:#14213d;font-family:'Inter', Arial, sans-serif;padding:88px 112px 128px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1">Four models, one fair comparison</h2>
+<div style="display:flex;gap:56px;align-items:flex-start">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<table style="font-size:28px;color:#14213d;background:#ffffff;border:1px solid #e1e0d9;border-radius:12px">
+<tr style="background:#f1f0ec"><th style="width:46%;text-align:left">Validation AUC</th><th style="width:27%;text-align:right">L2 loss</th><th style="width:27%;text-align:right">Log loss</th></tr>
+<tr><td>Glassbox: L1 linear model</td><td style="text-align:right">0.958</td><td style="text-align:right">0.966</td></tr>
+<tr><td>Blackbox: boosted trees</td><td style="text-align:right">0.966</td><td style="text-align:right">0.972</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:8px;background:#f1f0ec;padding:24px 28px;border-left:8px solid #2a78d6;border-radius:8px">
+<h3 style="font-size:30px;font-weight:600">Log loss beats L2 for both</h3>
+<p style="font-size:26px;line-height:1.35;color:#4a5568">+0.008 for the glassbox, +0.007 for the blackbox. Both intervals exclude zero. L2 scores fall outside 0–1 for 20–29% of wafers.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#f1f0ec;padding:24px 28px;border-left:8px solid #eb6834;border-radius:8px">
+<h3 style="font-size:30px;font-weight:600">Why validation, not training</h3>
+<p style="font-size:26px;line-height:1.35;color:#4a5568">The blackbox scores 1.000 on its own training data and 0.972 on validation.</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;width:820px">
+<img src="/_blob/5c13e9c9873c2816d9387786306bbfc6" alt="Validation AUC with 95% intervals: glassbox L2 0.958, glassbox log loss 0.966, blackbox L2 0.966, blackbox log loss 0.972. The intervals overlap." style="width:820px;height:410px;object-fit:contain">
+<p style="font-size:26px;line-height:1.35;color:#4a5568"><b>How we kept it fair:</b> split by lot, 60 / 20 / 20. Each model tuned separately by cross-validation inside the training split. 24 configurations in total.</p>
+</div>
+</div>
+<p style="position:absolute;left:112px;bottom:56px;width:1500px;font-size:24px;color:#6a7179">Solid = log loss, dashed = L2. Intervals resample whole lots, 2,000 times. Validation: 1,756 wafers.</p>
+<aside>Glassbox: an L1-penalised linear model. With L2 loss that is LASSO regression on the 0/1 label; with log loss it is L1 logistic regression. Blackbox: gradient-boosted trees, with squared error and with log loss. Within each row only the training loss changes. Each of the four was tuned separately by 5-fold cross-validation inside the training split, with folds by lot: 6 penalty values for the glassbox, tree depth times number of trees for the blackbox, 24 configurations in total. The validation split was used only to compare the four tuned models. Log loss wins for both model types. We split by lot because wafers from one lot look alike, and a random split would flatter validation.</aside>
+</section>

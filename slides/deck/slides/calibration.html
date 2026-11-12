@@ -1,0 +1,28 @@
+<section id="calibration" data-transition="fade" style="background:#fcfcfb;color:#14213d;font-family:'Inter', Arial, sans-serif;padding:88px 112px 128px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1">Calibration: mildly off, then fixed</h2>
+<div style="display:flex;gap:56px;align-items:flex-start">
+<img src="/_blob/95afa6a6fe859cfe901af23e88e41f68" alt="Reliability diagram. The L2 glassbox is far from the diagonal. The chosen model is close to it, and closer still after isotonic calibration." style="width:860px;height:535px;object-fit:contain">
+<div style="flex:1;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#ffffff;padding:20px 24px;border:1px solid #e1e0d9;border-radius:12px">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:600;line-height:1.1;color:#14213d">0.031 → 0.021</p>
+<p style="font-size:24px;line-height:1.3;color:#4a5568">calibration error (ECE) of the chosen model; AUC unchanged</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#f1f0ec;padding:24px 28px;border-left:8px solid #2a78d6;border-radius:8px">
+<h3 style="font-size:30px;font-weight:600">What was wrong</h3>
+<p style="font-size:26px;line-height:1.35;color:#4a5568">It under-predicts between 0.2 and 0.5, where our threshold sits.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#f1f0ec;padding:24px 28px;border-left:8px solid #eb6834;border-radius:8px">
+<h3 style="font-size:30px;font-weight:600">The fix</h3>
+<p style="font-size:26px;line-height:1.35;color:#4a5568">Isotonic regression, fitted on out-of-fold training scores so validation stays clean. Platt scaling barely helps a logistic model (0.029).</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#f1f0ec;padding:24px 28px;border-left:8px solid #14213d;border-radius:8px">
+<h3 style="font-size:30px;font-weight:600">Why it matters</h3>
+<p style="font-size:26px;line-height:1.35;color:#4a5568">With calibrated probabilities, theory gives the threshold: 1/(1+5) = 0.167. Ours is 0.22, at almost the same cost (0.143 vs 0.148).</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:112px;bottom:56px;width:1500px;font-size:24px;color:#6a7179">Validation split, equal-count bins. The glassbox stays the cheaper model for cost ratios from 3 to 8.</p>
+<aside>We checked calibration with a reliability diagram, the expected calibration error and the Brier score, for all four models. The L2 glassbox is the worst, with an error of 0.107. Our chosen model is mildly off at 0.031: it under-predicts between 0.2 and 0.5, exactly where the threshold sits. The fix: isotonic regression fitted on out-of-fold training scores, so the validation split is not reused. That takes the error to 0.021 and leaves AUC unchanged. Platt scaling barely helps a logistic model, but it works well for the blackbox, 0.034 to 0.013. Why it matters: with calibrated probabilities, decision theory gives the threshold directly as 1 over 1 plus the cost ratio, 0.167. Our searched threshold is 0.22, and using 0.167 costs almost the same. We also varied the cost ratio from 1 to 10: the glassbox stays the cheaper model from 3 to 8.</aside>
+</section>

@@ -1,0 +1,31 @@
+<section id="decision" data-transition="fade" style="background:#fcfcfb;color:#14213d;font-family:'Inter', Arial, sans-serif;padding:88px 112px 128px;display:flex;flex-direction:column;gap:36px">
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1">We chose the glassbox, at threshold 0.28</h2>
+<div style="display:flex;gap:56px;align-items:flex-start">
+<div style="flex:1;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px;background:#f1f0ec;padding:24px 28px;border-left:8px solid #2a78d6;border-radius:8px">
+<h3 style="font-size:30px;font-weight:600">Higher AUC, but not lower cost</h3>
+<p style="font-size:26px;line-height:1.35;color:#4a5568">The blackbox’s AUC is 0.006 higher (95% CI +0.0001 to +0.012). Its evaluation loss is not lower: 0.149 against the glassbox’s 0.143.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#f1f0ec;padding:24px 28px;border-left:8px solid #2a78d6;border-radius:8px">
+<h3 style="font-size:30px;font-weight:600">Rule set before looking</h3>
+<p style="font-size:26px;line-height:1.35;color:#4a5568">A blackbox must cut the cost by 10% to earn its opacity. It didn’t.</p>
+</div>
+<div style="display:flex;gap:24px">
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#ffffff;padding:20px 24px;border:1px solid #e1e0d9;border-radius:12px">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#b8431a">−27%</p>
+<p style="font-size:24px;line-height:1.3;color:#4a5568">cost vs a 0.5 threshold (0.196 → 0.143)</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:4px;background:#ffffff;padding:20px 24px;border:1px solid #e1e0d9;border-radius:12px">
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:600;line-height:1.1;color:#14213d">−1.8 pts</p>
+<p style="font-size:24px;line-height:1.3;color:#4a5568">accuracy (91.6% → 89.8%)</p>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;width:860px">
+<img src="/_blob/0ef0b4f268739ac8e40a3c0c35239137" alt="Cost per wafer against the decision threshold. Our evaluation loss is lowest at a threshold of 0.28. The misclassification rate is lowest near 0.61." style="width:860px;height:497px;object-fit:contain">
+<p style="font-size:26px;line-height:1.35;color:#4a5568">At 0.28 we miss 18 Edge-Loc wafers instead of 49, for 161 false alarms instead of 99.</p>
+</div>
+</div>
+<p style="position:absolute;left:112px;bottom:56px;width:1500px;font-size:24px;color:#6a7179">Validation split. Minimising plain misclassification would move the threshold the other way, to 0.61.</p>
+<aside>The blackbox has the highest validation AUC, by 0.006, and the interval only just excludes zero. But at our cost ratio its evaluation loss is not lower: 0.149 against 0.143. AUC averages over all thresholds; our costs only care about the low-threshold end. We had set a rule in advance: choose the blackbox only if it lowers the cost by at least 10 percent. So we chose the glassbox, L1 logistic regression. Then the threshold: the cost-minimising threshold is 0.28, not 0.5. That gives up 1.8 points of accuracy and cuts the cost by 27 percent. This is the evidence that the evaluation loss, not accuracy, should drive the decision.</aside>
+</section>
