@@ -1,10 +1,8 @@
-# DBA5106 Project 2: dataset selection
+# DBA5106 Project 2: wafer defect routing (classification)
 
-Dataset screening for **Project 2, Version 2 (with data)**: a classification project presented in at most 6 slides. The brief is in [`Project 2.pdf`](Project%202.pdf).
+**Project 2, Version 2 (with data)**: a classification project presented in at most 6 slides. The brief is in [`Project 2.pdf`](Project%202.pdf).
 
-The aim is a **semiconductor-related use case**. The notebook runs the same checks on every candidate dataset, mapped to what the slides grade, so the choice rests on evidence from the real data.
-
-**Decision: D2, WM-811K wafer maps, Edge-Loc vs Loc.** The cleaned MixedWM38 Scratch task (K) is the semiconductor alternative, and Steel Plates (E) is the non-semiconductor fallback.
+**The project.** A fab wafer shows a local cluster of failing dies. Is it **Edge-Loc** (a tool's edge process is drifting, so hold the tool) or **Loc** (a one-off particle)? A missed Edge-Loc is assumed to cost 5 times an unnecessary tool hold. Data: WM-811K wafer maps (Kaggle `qingyi/wm811k-wafer-map`), 8,782 labelled wafers, 10 engineered features.
 
 ## What the project has to show
 Classification project
@@ -18,12 +16,61 @@ Classification project
 - Calibration: is your model calibrated? If not, how can you improve its calibration?
 - SHAP: Even if you decide to use a glassbox model, you still need to apply tree SHAP to one tree-based blackbox model. The interpretability part must contain both local and global SHAP.
 
+## Results
+From `project/Project2_Classification.ipynb`, run on the real data.
+
+| Requirement | What we did | Result |
+|---|---|---|
+| Evaluation loss from the context | (5·FN + FP) / n: a missed edge excursion vs an unnecessary tool hold | Sensitivity shown for ratios 1–10 |
+| Glassbox and blackbox | L1-penalised linear model; gradient-boosted trees | |
+| L2 vs surrogate loss, tuned separately | Squared error vs log loss; 4 searches, 24 configurations, by cross-validation inside the training split | Log loss wins for both (+0.008 and +0.007 AUC) |
+| Compare on validation AUC, decide | Glassbox 0.958 (L2), 0.966 (log loss); blackbox 0.966 (L2), 0.972 (log loss) | **Chosen: glassbox, log loss.** The blackbox's AUC is 0.006 higher, but its evaluation loss is not lower (0.149 vs 0.143) |
+| Threshold minimising the evaluation loss | 0.28 on the raw score (0.22 after calibration) | 27% lower loss than a 0.5 threshold on validation |
+| Calibration | ECE 0.031; isotonic regression fitted on out-of-fold training scores | ECE about 0.02, AUC unchanged |
+| Tree SHAP, global and local | On the log-loss gradient-boosted trees; local plots shown next to the wafer maps | `largest_cluster_radius` dominates |
+| Final test (used once) | Frozen model, calibrator and threshold | AUC 0.958 (95% CI 0.946–0.969); loss 0.181 per wafer, 56% below holding every wafer |
+
+**What sets it apart:** our own physical features instead of a CNN; a harder question than the near-perfect "defect vs none"; splits by lot; hyperparameters tuned inside train so validation answers one question; lot-bootstrap intervals on every comparison; calibration tied to the theoretical threshold; local SHAP next to the wafer map.
+
+## Flags
+These are the places where the project departs from the brief or is weaker than it looks. The notebook's last section has the full list.
+
+1. **Kaggle usability rating not verified.** Kaggle's API needs a login. Check the rating on the dataset page before presenting.
+2. **The source dataset is large** (811,457 maps, 2 GB), against "avoid large datasets". We model an 8,782-wafer subset saved as a 1 MB table.
+3. **Feature extraction is preprocessing**, against "avoid data cleaning". It's deliberate; no rows were dropped or imputed.
+4. **The 5:1 cost ratio is our assumption.** The dataset has no cost data.
+5. **The glassbox's coefficients are hard to read.** Cross-validation chose the weakest penalty in the grid, all 10 features stay, and correlated features get large opposite-sign coefficients.
+6. **Test is worse than validation** (loss 0.181 vs 0.143), as expected when the model and threshold are picked on validation.
+7. **On test the blackbox's AUC lead is larger** (0.968 vs 0.959). We did not revisit the choice after seeing the test split.
+8. **Labels are engineers' judgements.** The costliest mistake looks like a labelling error.
+
 ## Repository layout
 | Path | What it is |
 |---|---|
 | `Project 2.pdf` | Project brief (lecture slides) |
-| `EDA/Project2_Dataset_EDA.ipynb` | Screening notebook: per-dataset checks, the scorecard, the MixedWM38 artefact check, and the final ranking (last cell). Its saved outputs are the round 3 local run. |
-| `EDA/output.csv` | Scorecard export from the **first** local run (A–J only, without row labels). The current scorecard is in the notebook. |
+| `project/Project2_Classification.ipynb` | **The project**: all requirements, with outputs |
+| `project/SLIDES.md` | Outline for the 6 slides, with the numbers and figures to use |
+| `project/figures/` | Figures saved by the notebook |
+| `project/build_features.py` | Builds the feature table and wafer maps from the Kaggle file |
+| `project/data/` | The feature table (8,782 wafers) and their wafer maps |
+| `project/results_summary.json` | Key results, written by the notebook |
+| `EDA/Project2_Dataset_EDA.ipynb` | Dataset screening: 13 candidates, the same checks on each, and the ranking |
+| `EDA/output.csv` | Scorecard export from the first screening run (A–J only) |
+
+## How to run the project
+```bash
+pip install pandas numpy scikit-learn scipy matplotlib shap
+```
+```bash
+cd project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification.ipynb
+```
+The notebook reads `project/data/`, so it doesn't need Kaggle. To rebuild that data from the source file (needs `kagglehub` and several GB of RAM):
+```bash
+python project/build_features.py
+```
+
+# Dataset selection
+The dataset was chosen by screening 13 candidates in `EDA/Project2_Dataset_EDA.ipynb`. That screening used random splits; the project notebook splits by lot.
 
 ## Datasets screened
 | # | Dataset | Source | Verdict from the run |
@@ -71,7 +118,7 @@ A 20% test split is held out before any check that uses labels. All the models a
 
 The flag-count summary in the notebook puts G first. The ranking above also weighs the model-decision story, the threshold story, real vs synthetic data, and semiconductor relevance. The full reasoning is in the last cell of the notebook.
 
-## How to run
+## How to run the screening notebook
 ```bash
 pip install kagglehub pandas numpy scikit-learn scipy matplotlib shap requests
 ```
@@ -81,7 +128,6 @@ pip install kagglehub pandas numpy scikit-learn scipy matplotlib shap requests
 3. WM-811K needs several GB of RAM to load the full pickle.
 
 ## Next steps
-1. Fix the business setting and cost ratio (FN:FP) for D2 before tuning anything. For example: misrouting an Edge-Loc wafer to the interior-defect team vs the reverse.
-2. Build the modelling pipeline for D2 in a new notebook, reusing the held-out test split (same `SEED`). Keep the explorations few and deliberate to avoid overfitting the validation set (the slides call this the "optimizer's curse"), and look at the test split once.
-3. Optional: if K is still of interest, rerun the extra checks (calibration, noise, threshold, SHAP) on the cleaned K data before comparing it with D2.
-4. Fill in Kaggle usability ratings and public notebook counts in the `KAGGLE_META` table.
+1. Check the Kaggle usability rating for `qingyi/wm811k-wafer-map`.
+2. Build the 6 slides from `project/SLIDES.md`.
+3. Decide how to defend the 5:1 cost ratio in the Q&A, or replace it with a figure you can source.

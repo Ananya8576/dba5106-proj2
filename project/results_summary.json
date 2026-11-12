@@ -1,0 +1,22 @@
+{
+  "chosen_model": [
+    "glassbox",
+    "log loss"
+  ],
+  "calibrator": "isotonic",
+  "threshold": 0.2204,
+  "cost_ratio_fn_fp": [
+    5.0,
+    1.0
+  ],
+  "validation_auc": {
+    "glassbox|L2": 0.9581,
+    "glassbox|log loss": 0.9659,
+    "blackbox|L2": 0.9655,
+    "blackbox|log loss": 0.972
+  },
+  "test_auc_chosen": 0.9584,
+  "test_eval_loss": 0.1809,
+  "test_eval_loss_at_0.5": 0.2179,
+  "configurations_tried": 24
+}
