@@ -14,6 +14,7 @@ Every number below comes from `Project2_Classification.ipynb`. Figures are in `f
 - Split **by lot** 60 / 20 / 20. Tuned separately by cross-validation inside train: 24 configurations in total.
 - Validation AUC: glassbox L2 0.958, **glassbox log loss 0.966**, blackbox L2 0.966, **blackbox log loss 0.972**.
 - Log loss beats L2 for both (+0.008 and +0.007; both intervals exclude zero). L2 scores fall outside 0–1 for 20–29% of wafers.
+- Why validation and not training: the blackbox's training AUC is 1.000.
 - Figure: `03_auc_intervals.png`.
 
 ## Slide 3: The decision, and the threshold
@@ -39,5 +40,6 @@ Every number below comes from `Project2_Classification.ipynb`. Figures are in `f
 ## Slide 6: Test result, limits, what we'd do next
 - **Test, used once:** AUC 0.958 (95% CI 0.946 to 0.969). Evaluation loss 0.181 per wafer: 56% below holding every wafer, 17% below a 0.5 threshold.
 - Test is worse than validation (0.181 vs 0.143): the optimiser's curse, as expected, since the model and threshold were picked on validation.
-- **Limits:** the 5:1 cost ratio is assumed; labels are engineers' judgements; on test the blackbox's AUC lead is larger (0.968 vs 0.959), and we did not revisit the choice.
+- **Limits:** the 5:1 cost ratio is assumed; labels are engineers' judgements.
+- **Honest audit:** on test the blackbox we didn't choose scores 0.158 against our 0.181 (difference −0.023, 95% CI −0.051 to +0.007, so not distinguishable). We did not switch after seeing test.
 - **Next:** get real cost figures from a fab; try a sparser glassbox (EBM or a shallow tree) for cleaner explanations; re-check labels on the worst mistakes.

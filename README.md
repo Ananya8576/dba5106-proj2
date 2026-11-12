@@ -16,33 +16,114 @@ Classification project
 - Calibration: is your model calibrated? If not, how can you improve its calibration?
 - SHAP: Even if you decide to use a glassbox model, you still need to apply tree SHAP to one tree-based blackbox model. The interpretability part must contain both local and global SHAP.
 
-## Results
-From `project/Project2_Classification.ipynb`, run on the real data.
+## End-to-end check
+Four checkpoints, in the order the work was done. Every number is from `project/Project2_Classification.ipynb` unless it says "screening", which means `EDA/Project2_Dataset_EDA.ipynb`.
 
-| Requirement | What we did | Result |
+### Checkpoint 1: dataset and data sanity
+**Why this dataset.** 13 candidates were screened with the same checks (see "Dataset selection" below). WM-811K Edge-Loc vs Loc was the only semiconductor candidate that passed everything except preprocessing.
+
+| Brief's guidance | Check | Result | Verdict |
+|---|---|---|---|
+| High-usability Kaggle dataset | Kaggle page | Rating could not be read (the API needs a login) | **Unverified: check by hand** |
+| Avoid large datasets | Rows used | 8,782 wafers, 10 features, 1 MB table. The source file is 811,457 maps, 2 GB | **Flag**: large source, small working set |
+| Avoid missing data | Missing cells | 0 | Pass |
+| Avoid data cleaning | Duplicates, conflicting labels, constant columns | 55 duplicate feature rows (0.6%), none with conflicting labels; no constant columns. Nothing dropped or imputed | Pass, but **flag**: the maps needed feature extraction |
+| Avoid severe imbalance | Class balance | 59.1% Edge-Loc; 1,038 Edge-Loc wafers in validation | Pass |
+| Not almost perfect | Untuned baselines (screening) | AUC 0.963 and 0.974. "Defect vs none" on the same data was 0.995, so the question was changed | Pass |
+| No leakage | Single-feature AUC (screening); lots | Strongest single feature 0.892. 5,008 lots, so splits are by lot | Pass |
+| Features that can be explained | Feature names | 10 physical features (fail rate by zone, cluster size and position) | Pass |
+
+Splits: 60 / 20 / 20 **by lot**, stratified. Train 5,268 wafers, validation 1,756, test 1,758, each 59.1% Edge-Loc.
+
+### Checkpoint 2: models, what was tried, and the decision
+| | L2 loss | Surrogate loss (log loss) |
 |---|---|---|
-| Evaluation loss from the context | (5·FN + FP) / n: a missed edge excursion vs an unnecessary tool hold | Sensitivity shown for ratios 1–10 |
-| Glassbox and blackbox | L1-penalised linear model; gradient-boosted trees | |
-| L2 vs surrogate loss, tuned separately | Squared error vs log loss; 4 searches, 24 configurations, by cross-validation inside the training split | Log loss wins for both (+0.008 and +0.007 AUC) |
-| Compare on validation AUC, decide | Glassbox 0.958 (L2), 0.966 (log loss); blackbox 0.966 (L2), 0.972 (log loss) | **Chosen: glassbox, log loss.** The blackbox's AUC is 0.006 higher, but its evaluation loss is not lower (0.149 vs 0.143) |
-| Threshold minimising the evaluation loss | 0.28 on the raw score (0.22 after calibration) | 27% lower loss than a 0.5 threshold on validation |
-| Calibration | ECE 0.031; isotonic regression fitted on out-of-fold training scores | ECE about 0.02, AUC unchanged |
-| Tree SHAP, global and local | On the log-loss gradient-boosted trees; local plots shown next to the wafer maps | `largest_cluster_radius` dominates |
-| Final test (used once) | Frozen model, calibrator and threshold | AUC 0.958 (95% CI 0.946–0.969); loss 0.181 per wafer, 56% below holding every wafer |
+| **Glassbox:** L1-penalised linear model on standardised features | LASSO regression on the 0/1 label | L1 logistic regression |
+| **Blackbox:** gradient-boosted trees (scikit-learn `HistGradientBoosting`) | Squared error | Log loss |
 
-**What sets it apart:** our own physical features instead of a CNN; a harder question than the near-perfect "defect vs none"; splits by lot; hyperparameters tuned inside train so validation answers one question; lot-bootstrap intervals on every comparison; calibration tied to the theoretical threshold; local SHAP next to the wafer map.
+**What was tried.** 24 configurations in total, 6 per model, each model tuned separately by 5-fold cross-validated AUC inside the training split (folds by lot):
+- Glassbox: penalty strength, 6 values.
+- Blackbox: tree depth (2, 3, 5) × number of trees (100, 300), learning rate 0.1.
+
+| Model | Train loss | Chosen setting | Training AUC | Validation AUC (95% CI) |
+|---|---|---|---|---|
+| Glassbox | L2 | alpha = 0.0003 | 0.960 | 0.958 (0.947–0.968) |
+| Glassbox | Log loss | C = 10 | 0.969 | **0.966** (0.957–0.974) |
+| Blackbox | L2 | depth 3, 300 trees | 0.988 | 0.966 (0.954–0.975) |
+| Blackbox | Log loss | depth 5, 300 trees | 1.000 | **0.972** (0.963–0.980) |
+
+**Judgement checks behind the decision**
+1. **L2 vs log loss.** Log loss wins for both: +0.008 for the glassbox (CI +0.003 to +0.014) and +0.007 for the blackbox (CI +0.003 to +0.011).
+2. **Glassbox vs blackbox.** The blackbox's validation AUC is 0.006 higher (CI +0.0001 to +0.012), so it only just clears zero.
+3. **Does that AUC gain lower the cost?** No. At each model's best threshold the evaluation loss is 0.143 for the glassbox and 0.149 for the blackbox.
+4. **Rule set before looking at validation:** choose the blackbox only if its AUC is distinguishably higher and it lowers the evaluation loss by at least 10%.
+5. **Cost-ratio sensitivity.** The glassbox is the cheaper model for ratios 3 to 8; the blackbox is marginally cheaper at 1–2 and 9–10.
+
+**Decision: the glassbox, L1 logistic regression trained with log loss.**
+
+**Was it the best decision?** It is defensible, but the data doesn't show it is the cheaper model. In a post-hoc audit on test, the blackbox scores 0.158 against the glassbox's 0.181 (8 fewer missed Edge-Loc wafers, the same 178 false alarms). The difference is −0.023 (95% CI −0.051 to +0.007), which isn't distinguishable from zero. We did not switch after seeing test. On a strict reading of "compare using validation AUC", the blackbox ranks first; our choice adds the evaluation loss and interpretability to that comparison.
+
+### Checkpoint 3: losses, metrics and calibration
+**Losses, as the brief asks**
+- **Train loss:** L2 vs log loss for both model types (checkpoint 2).
+- **Evaluation loss:** (5·FN + FP) / n, from the context: a missed edge excursion vs an unnecessary tool hold. It deviates from misclassification, which would weigh both errors equally.
+- **Comparison:** on validation AUC, not training loss. Training AUC is shown only to make the point: the blackbox reaches 1.000 on training data.
+
+**Threshold for the chosen model (validation)**
+
+| Threshold on the raw score | Missed Edge-Loc | False alarms | Accuracy | Evaluation loss |
+|---|---|---|---|---|
+| 0.5 (default) | 49 | 99 | 91.6% | 0.196 |
+| 0.28 (minimises the evaluation loss) | 18 | 161 | 89.8% | **0.143** |
+
+Accuracy falls by 1.8 points and the cost falls by 27%. Minimising plain misclassification would put the threshold at 0.61.
+
+**Other metrics reported:** for all four models on validation, average precision, Brier score, accuracy at 0.5 and the evaluation loss; for the chosen model, also recall, precision and the confusion matrix on validation and test.
+
+**Calibration**
+- **How it was checked:** reliability diagram, expected calibration error (ECE, 10 bins) and Brier score on validation, for all four models.
+- **What was found:** the chosen glassbox is mildly off (ECE 0.031). It under-predicts between 0.2 and 0.5, where the threshold sits. The L2 glassbox is the worst (ECE 0.107), and the L2 models put 20–29% of scores outside 0–1.
+- **What was done:** Platt scaling and isotonic regression, each fitted on out-of-fold training scores so validation stays clean. Isotonic was kept (lowest Brier score): ECE 0.031 → 0.021, AUC unchanged. Platt barely helps the logistic model (0.029) but works for the blackbox (0.034 → 0.013).
+- **Link to the threshold:** on calibrated probabilities the best threshold is 0.22; decision theory gives 1/(1+5) = 0.167, which costs almost the same (0.148 vs 0.143).
+
+**Test split, used once:** AUC 0.958 (95% CI 0.946–0.969), evaluation loss 0.181 per wafer (CI 0.143–0.223), accuracy 88.3%, recall 97.3%, precision 85.0%, ECE 0.019. Holding the tool for every wafer would cost 0.409.
+
+### Checkpoint 4: tree SHAP and interpretability
+The brief requires tree SHAP on a tree-based blackbox even when a glassbox is chosen. It was applied to the log-loss gradient-boosted trees with `shap.TreeExplainer`, on the validation split.
+
+| Required | Shown | Figure |
+|---|---|---|
+| Global SHAP | Mean absolute SHAP per feature, and a plot of every wafer's SHAP values coloured by feature value | `project/figures/07_shap_global.png` |
+| Local SHAP | Three wafers picked by rule (most confident Edge-Loc, most confident Loc, costliest mistake), each next to its wafer map | `project/figures/09_shap_local.png` |
+| Extra | How the two top features move the prediction | `project/figures/08_shap_dependence.png` |
+
+- **What the model relies on:** `largest_cluster_radius` (mean absolute SHAP 4.0), then `edge_fail_rate` (1.8) and `outer_ring_fail_rate` (0.9). That matches the question: is the cluster at the edge?
+- **Correctness check:** each wafer's SHAP values plus the base value add up to the model's log-odds (largest gap 4e-11).
+- **Costliest mistake:** a wafer labelled Edge-Loc whose cluster sits near the centre (radius 0.32). Both models call it Loc, so it may be a labelling error.
+- **Limits:** the fail-rate features are correlated, so SHAP credit among them is unstable, and the glassbox's coefficients have large opposite signs (`fail_rate` −22, `edge_fail_rate` +13). The rank agreement between SHAP and the glassbox coefficients is only 0.43.
+
+## What sets it apart
+- Our own physical features instead of a CNN.
+- A harder question than the near-perfect "defect vs none".
+- Splits by lot.
+- Hyperparameters tuned inside train, so validation answers one question.
+- Lot-bootstrap intervals on every comparison.
+- Calibration tied to the theoretical threshold.
+- Local SHAP next to the wafer map.
+- A post-hoc audit of our own model choice.
 
 ## Flags
-These are the places where the project departs from the brief or is weaker than it looks. The notebook's last section has the full list.
+These are the places where the project departs from the brief or is weaker than it looks.
 
-1. **Kaggle usability rating not verified.** Kaggle's API needs a login. Check the rating on the dataset page before presenting.
-2. **The source dataset is large** (811,457 maps, 2 GB), against "avoid large datasets". We model an 8,782-wafer subset saved as a 1 MB table.
-3. **Feature extraction is preprocessing**, against "avoid data cleaning". It's deliberate; no rows were dropped or imputed.
+1. **Kaggle usability rating not verified.** Check the rating on the dataset page before presenting.
+2. **The source dataset is large** (811,457 maps, 2 GB), against "avoid large datasets".
+3. **Feature extraction is preprocessing**, against "avoid data cleaning".
 4. **The 5:1 cost ratio is our assumption.** The dataset has no cost data.
-5. **The glassbox's coefficients are hard to read.** Cross-validation chose the weakest penalty in the grid, all 10 features stay, and correlated features get large opposite-sign coefficients.
-6. **Test is worse than validation** (loss 0.181 vs 0.143), as expected when the model and threshold are picked on validation.
-7. **On test the blackbox's AUC lead is larger** (0.968 vs 0.959). We did not revisit the choice after seeing the test split.
-8. **Labels are engineers' judgements.** The costliest mistake looks like a labelling error.
+5. **The model decision is not a pure validation-AUC ranking.** The blackbox has the highest validation AUC; we chose the glassbox on evaluation loss and interpretability.
+6. **On test the blackbox does better** (loss 0.158 vs 0.181, AUC 0.968 vs 0.958); the loss difference isn't distinguishable from zero.
+7. **The glassbox's coefficients are hard to read.** Cross-validation chose the weakest penalty in the grid, so all 10 features stay.
+8. **Test is worse than validation** (loss 0.181 vs 0.143), as expected when the model and threshold are picked on validation.
+9. **Labels are engineers' judgements**, and some look wrong.
 
 ## Repository layout
 | Path | What it is |
