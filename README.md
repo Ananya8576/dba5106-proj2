@@ -7,12 +7,16 @@ The aim is a **semiconductor-related use case**. The notebook runs the same chec
 **Decision: D2, WM-811K wafer maps, Edge-Loc vs Loc.** The cleaned MixedWM38 Scratch task (K) is the semiconductor alternative, and Steel Plates (E) is the non-semiconductor fallback.
 
 ## What the project has to show
-- A classification task whose **evaluation loss deviates from misclassification**, with the threshold chosen to minimise that loss.
-- At least one **glassbox** and one **blackbox** model, each trained with **L2 loss and a surrogate loss**, tuned separately.
-- Models compared on **validation AUC** (not train loss), then a decision.
-- **Calibration**: are the models calibrated, and can they be recalibrated?
-- **Tree SHAP**, local and global, on a tree-based blackbox.
-- Dataset guidance: avoid severe imbalance, large datasets, heavy cleaning and missing data; prefer high Kaggle usability; if the prediction is almost perfect, delete features to make it harder.
+Classification project
+- Find your dataset. For example, find a high-usability dataset on Kaggle. 
+- The evaluation loss shall deviate from the misclassification loss. The deviation shall come from the context.
+- Interpretability and performance.
+- You must implement at least one glassbox and at least one blackbox model.
+- Each model shall have two versions (train loss): L2 loss vs. other surrogate losses.
+- Compare all of them using validation AUC (not training loss) and make a decision.
+- For the chosen model, select the threshold that minimizes the evaluation loss.
+- Calibration: is your model calibrated? If not, how can you improve its calibration?
+- SHAP: Even if you decide to use a glassbox model, you still need to apply tree SHAP to one tree-based blackbox model. The interpretability part must contain both local and global SHAP.
 
 ## Repository layout
 | Path | What it is |
