@@ -3,6 +3,7 @@
 Every number below comes from `project/Project2_Classification.ipynb`.
 
 - **Deck:** https://claude.ai/artifact/S4n1WdZDCnKSmxF778twG2 (private until shared; download as PowerPoint or PDF from its Share menu).
+- **PowerPoint file:** `Project2_Wafer_Defect_Routing.pptx`, built by `build_pptx.js`. Same six slides and speaker notes as the deck.
 - **Deck source:** `deck/` holds the six slides as published.
 - **Slide figures:** `figures/`, drawn by `make_slide_figures.py` from the notebook's own numbers. The figure names below (`03_auc_intervals.png` and so on) are the notebook's versions in `project/figures/`.
 

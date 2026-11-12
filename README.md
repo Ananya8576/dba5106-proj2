@@ -131,6 +131,7 @@ These are the places where the project departs from the brief or is weaker than 
 | `Project 2.pdf` | Project brief (lecture slides) |
 | `project/Project2_Classification.ipynb` | **The project**: all requirements, with outputs |
 | `slides/SLIDES.md` | Outline for the 6 slides, and the link to the deck |
+| `slides/Project2_Wafer_Defect_Routing.pptx` | **The presentation**: six slides with speaker notes, built by `slides/build_pptx.js` |
 | `slides/deck/` | The six slides as published |
 | `slides/figures/` | Slide-sized figures, drawn by `slides/make_slide_figures.py` |
 | `project/figures/` | Figures saved by the notebook |
@@ -212,5 +213,5 @@ pip install kagglehub pandas numpy scikit-learn scipy matplotlib shap requests
 
 ## Next steps
 1. Check the Kaggle usability rating for `qingyi/wm811k-wafer-map`.
-2. Download the deck as PowerPoint from the link in `slides/SLIDES.md`, and rehearse with its speaker notes.
+2. Rehearse with `slides/Project2_Wafer_Defect_Routing.pptx` and its speaker notes.
 3. Decide how to defend the 5:1 cost ratio in the Q&A, or replace it with a figure you can source.
