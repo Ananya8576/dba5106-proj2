@@ -102,6 +102,27 @@ The brief requires tree SHAP on a tree-based blackbox even when a glassbox is ch
 - **Costliest mistake:** a wafer labelled Edge-Loc whose cluster sits near the centre (radius 0.32). Both models call it Loc, so it may be a labelling error.
 - **Limits:** the fail-rate features are correlated, so SHAP credit among them is unstable, and the glassbox's coefficients have large opposite signs (`fail_rate` −22, `edge_fail_rate` +13). The rank agreement between SHAP and the glassbox coefficients is only 0.43.
 
+## Comparison run: scratch detection on MixedWM38
+`project/Project2_Classification_Scratch.ipynb` repeats the whole pipeline on the second-ranked dataset: same models, grids, 60 / 20 / 20 split, 5:1 cost ratio, decision rule, calibration and SHAP steps. The data is cleaned first (1,024 duplicate maps dropped, `n_dies` deleted), and the split is stratified random because the dataset has no lot information.
+
+| | Main project: WM-811K, Edge-Loc vs Loc | Comparison: MixedWM38, Scratch vs not |
+|---|---|---|
+| Wafers; positive rate | 8,782; 59% | 36,991; 49% (balanced by the dataset's authors) |
+| Validation AUC, glassbox L2 / log loss | 0.958 / 0.966 | 0.597 / 0.654 |
+| Validation AUC, blackbox L2 / log loss | 0.966 / 0.972 | 0.879 / 0.881 |
+| Blackbox − glassbox AUC | +0.006 | +0.227 |
+| Evaluation loss at best threshold, glassbox / blackbox | 0.143 / 0.149 | 0.512 / 0.328 |
+| **Chosen model** | **Glassbox** | **Blackbox** |
+| Threshold and saving vs 0.5 | 0.28; −27% | 0.175; −45% |
+| Calibration error before → after | 0.031 → 0.021 | 0.013 → 0.009 |
+| Top SHAP feature | `largest_cluster_radius` | `edge_fail_rate` |
+| Test AUC | 0.958 | 0.882 |
+| Test evaluation loss (vs holding every wafer) | 0.181 (0.409) | 0.330 (0.513) |
+
+- **The same rule gives opposite choices.** Where a linear model captures the signal, the glassbox is enough; where it can't, the blackbox is worth its opacity.
+- **Log loss beats or ties L2 in every case.**
+- **Main flag on the comparison run:** SHAP shows its model relies on edge fail rates, and the wafer it is most sure about shows no visible scratch. It is probably learning how the mixed maps were assembled, so the main project remains the one to present.
+
 ## What sets it apart
 - Our own physical features instead of a CNN.
 - A harder question than the near-perfect "defect vs none".
@@ -136,6 +157,8 @@ These are the places where the project departs from the brief or is weaker than 
 | `slides/figures/` | Slide-sized figures, drawn by `slides/make_slide_figures.py` |
 | `project/figures/` | Figures saved by the notebook |
 | `project/build_features.py` | Builds the feature table and wafer maps from the Kaggle file |
+| `project/Project2_Classification_Scratch.ipynb` | Comparison run: the same pipeline on MixedWM38 scratch detection |
+| `project/build_features_mixedwm38.py`, `project/figures_scratch/`, `project/results_summary_scratch.json` | Feature builder, figures and key results of the comparison run |
 | `project/data/` | The feature table (8,782 wafers) and their wafer maps |
 | `project/results_summary.json` | Key results, written by the notebook |
 | `EDA/Project2_Dataset_EDA.ipynb` | Dataset screening: 13 candidates, the same checks on each, and the ranking |
@@ -170,8 +193,12 @@ The dataset was chosen by screening 13 candidates in `EDA/Project2_Dataset_EDA.i
 | H | APS failure at Scania trucks | Kaggle `uciml/aps-failure-at-scania-trucks-data-set` | Excluded: anonymous, missing data, 1.7% positive |
 | I | SECOM | Kaggle `paresh2047/uci-semcom` | Excluded: anonymous, missing data, 21 validation positives |
 | J | Singapore rain tomorrow | data.gov.sg `d_03bb2eb67ad645d0188342fa74ad7066` | Excluded: weak signal (AUC 0.62), 16% missing |
-| K | MixedWM38 mixed-type wafer maps, Scratch vs not | Kaggle `co1d7era/mixedtype-wafer-defect-datasets` | Rank 2, **cleaned version only** |
+| K | MixedWM38 mixed-type wafer maps, Scratch vs not | Kaggle `co1d7era/mixedtype-wafer-defect-datasets` | Rank 2, **cleaned version only**. Modelled end to end as the comparison run |
+| M | Semiconductor wafer fault detection | Kaggle `krishujeniya/semiconductor-wafer-fault-detection-dataset` | Excluded: all 1,537 labelled rows are SECOM rows (dataset I) |
+| N | Wafer dataset (batch files) | Kaggle `himanshunayal/waferdataset` | Excluded: the same wafers as M, as raw batch files |
 | L | Semiconductor sensor data (simulated) | Kaggle `programmer3/semiconductor-sensor-data-for-predictive-quality` | Not assessed: Kaggle returned 403 |
+
+Round 4 also found four image datasets: three are pictures of the WM-811K wafers already in D (`vinishraghavke/wafer-defect-classification-dataset`, `sushnu/wm-811k-augmented-and-preprocessed-dataset`, `muhammedjunayed/wm811k-silicon-wafer-map-dataset-image`), and one is 625 SEM photographs in 12 classes (`cagrant/long-tailed-sem-wafer-defect-dataset`). None is tabular, so none is a candidate.
 
 The wafer-map datasets (D, D2, K) are turned into 10 named spatial features per wafer (zone fail rates, cluster size and radius, angular concentration), so tabular models and tree SHAP apply.
 
