@@ -1,0 +1,19 @@
+<section id="shap" data-transition="fade" style="gap:24px">
+<h2>Tree SHAP: the model does not look at the scratch</h2>
+<div class="cols">
+<div class="figcol" style="width:700px;gap:12px">
+<p class="sub">Global: what the model relies on</p>
+<img src="/_blob/4b80e55270147ae02c5b99aa74921df2" alt="Mean absolute SHAP value per feature. edge_fail_rate is first at 1.2, then outer_ring_fail_rate at 1.0, n_fail_clusters at 0.7 and largest_cluster_radius at 0.7." style="width:700px;height:516px;object-fit:contain">
+<p class="cap">Edge fail rates lead. No feature describes a line.</p>
+</div>
+<div class="col" style="gap:12px">
+<p class="sub">Local: two wafers, next to their maps</p>
+<p class="cap"><b>Most confident scratch.</b> P(scratch) = 1.000. Label: Donut + Edge-Ring + Loc + Scratch. No line is visible; the edge fail rates decide.</p>
+<img src="/_blob/8bc6626437f9e775a5bb451d2bdf630a" alt="Wafer map with a donut and an edge ring and no visible line, beside its SHAP values. outer_ring_fail_rate = 0.85 and edge_fail_rate = 0.48 push towards scratch." style="width:800px;height:240px;object-fit:contain">
+<p class="cap"><b>Costliest mistake.</b> Label: Edge-Loc + Scratch, P = 0.013. A cluster at the very edge pushes it to “no scratch”.</p>
+<img src="/_blob/64974c89805eee211038af3215c026c0" alt="Wafer map with scattered failures, beside its SHAP values. largest_cluster_radius = 0.94 pushes strongly towards no scratch." style="width:800px;height:240px;object-fit:contain">
+</div>
+</div>
+<p class="foot">Likely cause: the model has learned which mixes of patterns come with the Scratch label in this dataset. Orange pushes towards scratch, blue away.</p>
+<aside>This is the most important slide of the second run. Tree SHAP on the chosen blackbox, on the validation split. Globally, the model relies on the edge fail rate and the outer ring fail rate, then the number of failing clusters. None of these describes a thin line. Locally, the wafer the model is most sure has a scratch is labelled Donut plus Edge-Ring plus Loc plus Scratch. Look at its map: there is no visible line. The prediction comes from its edge fail rates. And the costliest mistake is a wafer labelled Edge-Loc plus Scratch that the model scores at 0.013, because its largest cluster sits at the very edge. So the model is not detecting scratches. It has probably learned which mixes of patterns tend to carry the Scratch label in this dataset, which may reflect how the mixed maps were built. That would not transfer to a real fab. This is the value of SHAP here: an AUC of 0.88 looked like success, and the explanation shows the model learned the wrong thing. In the first run, by contrast, SHAP matched the physics: the model asked whether the cluster was at the edge.</aside>
+</section>

@@ -1,0 +1,41 @@
+<section id="result" class="dark" data-transition="fade">
+<h2>Two runs, one pipeline, opposite decisions</h2>
+<div class="cols">
+<div style="width:1020px;display:flex;flex-direction:column">
+<table>
+<tr class="head"><th style="width:40%;text-align:left"></th><th style="width:30%;text-align:left">Run 1: Edge-Loc vs Loc</th><th style="width:30%;text-align:left">Run 2: Scratch vs not</th></tr>
+<tr><td>Data</td><td>Real fab maps, 8,782</td><td>Real + generated, 36,991</td></tr>
+<tr><td>AUC, glassbox / blackbox</td><td>0.966 / 0.972</td><td>0.654 / 0.881</td></tr>
+<tr><td>Loss, glassbox / blackbox</td><td>0.143 / 0.149</td><td>0.512 / 0.328</td></tr>
+<tr><td>Model chosen</td><td>Glassbox</td><td>Blackbox</td></tr>
+<tr><td>Threshold; saving vs 0.5</td><td>0.28; −27%</td><td>0.175; −45%</td></tr>
+<tr><td>Calibration error</td><td>0.031 → 0.021</td><td>0.013 → 0.009</td></tr>
+<tr><td>Test AUC</td><td>0.958</td><td>0.882</td></tr>
+<tr><td>Test loss (hold every wafer)</td><td>0.181 (0.409)</td><td>0.330 (0.513)</td></tr>
+<tr><td>SHAP matches the physics?</td><td>Yes</td><td>No</td></tr>
+</table>
+</div>
+<div class="col">
+<div class="row">
+<div class="stat">
+<p class="num">0.882</p>
+<p class="lbl">run 2 test AUC (95% CI 0.874 to 0.889)</p>
+</div>
+<div class="stat">
+<p class="num accent">−36%</p>
+<p class="lbl">run 2 test cost vs holding every wafer</p>
+</div>
+</div>
+<div class="card">
+<p class="ctitle">What the comparison shows</p>
+<p class="ctext">The same rule picks the glassbox when a linear model captures the signal, and the blackbox when it can’t. Log loss never loses to L2.</p>
+</div>
+<div class="card">
+<p class="ctitle">Which to trust</p>
+<p class="ctext">Run 1. Run 2 has the bigger gap, but its model reads how the dataset was built, and its 49% scratch rate is artificial.</p>
+</div>
+</div>
+</div>
+<p class="foot">AUC and loss rows are validation, log-loss models, at each model’s best threshold. Test splits used once: 1,758 wafers (run 1), 7,398 (run 2). Loss levels are not comparable across runs.</p>
+<aside>Test result for the second run, used once: AUC 0.882, evaluation loss 0.330 per wafer, 36 percent below holding the tool for every wafer. Validation and test agree, 0.328 against 0.330, because the validation split is four times larger than in the first run, so there is little optimiser's curse. The audit agrees with the choice: the glassbox we did not choose scores 0.513 on test. Now the comparison. Same pipeline, same grids, same cost ratio, same decision rule. The rule picks the glassbox in run 1 and the blackbox in run 2, for a reason we can explain: a linear model captures edge versus interior, but not a thin line among other defects. Log loss beats or ties L2 in every case. Tuning the threshold pays off in both, more where the model is weaker. Better calibration puts the searched threshold closer to the theoretical one. Which result do we trust? Run 1: real data, and a model whose explanation matches the physics. Run 2 has the more dramatic gap, but SHAP shows its model reads how the dataset was assembled, and its 49 percent scratch rate is artificial, so its loss levels cannot be compared with run 1 or with a real fab. Limits for both: the 5 to 1 cost ratio is our assumption.</aside>
+</section>

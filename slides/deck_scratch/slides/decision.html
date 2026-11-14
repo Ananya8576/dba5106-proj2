@@ -1,0 +1,31 @@
+<section id="decision" data-transition="fade">
+<h2>This time the blackbox wins, at threshold 0.175</h2>
+<div class="cols">
+<div class="col">
+<div class="card">
+<p class="ctitle">Same rule, opposite answer</p>
+<p class="ctext">The blackbox must cut the cost by 10% to earn its opacity. Here it cuts it by 36%: 0.328 per wafer against 0.512.</p>
+</div>
+<div class="card">
+<p class="ctitle">The glassbox adds nothing</p>
+<p class="ctext">Its best cost, 0.512, is the cost of holding the tool for every wafer (0.513).</p>
+</div>
+<div class="row">
+<div class="stat">
+<p class="num accent">−45%</p>
+<p class="lbl">cost vs a 0.5 threshold (0.595 → 0.328)</p>
+</div>
+<div class="stat">
+<p class="num">−8.2 pts</p>
+<p class="lbl">accuracy (79.1% → 70.9%)</p>
+</div>
+</div>
+</div>
+<div class="figcol" style="width:860px">
+<img src="/_blob/d9e2aca5acda88c934db038338f9dc0c" alt="Cost per wafer against the decision threshold for the blackbox. Our evaluation loss is lowest at a threshold of 0.175. The misclassification rate is lowest near 0.49." style="width:860px;height:497px;object-fit:contain">
+<p class="note">At 0.175 we miss 68 scratched wafers instead of 714, for 2,088 false alarms instead of 835.</p>
+</div>
+</div>
+<p class="foot">Validation split. Minimising plain misclassification would leave the threshold at 0.49. The choice holds for every cost ratio from 1 to 10.</p>
+<aside>We applied the same decision rule as in the first run, fixed in advance: choose the blackbox only if its validation AUC is distinguishably higher and it lowers the evaluation loss by at least 10 percent. In the first run the blackbox failed that test and we chose the glassbox. Here it passes easily: the AUC gap is 0.227 and the cost is 36 percent lower, 0.328 against 0.512. In fact the glassbox's best cost equals the cost of simply holding the tool for every wafer, so it adds nothing. Then the threshold. The cost-minimising threshold is 0.175, not 0.5. That cuts the cost by 45 percent, by catching 646 more scratched wafers for 1,253 more false alarms. Accuracy falls by 8 points while the cost falls by almost half, which again shows why the evaluation loss, not accuracy, should drive the decision. Unlike the first run, the choice of model holds for every cost ratio from 1 to 10.</aside>
+</section>

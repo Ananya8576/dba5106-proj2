@@ -1,0 +1,26 @@
+<section id="models" data-transition="fade">
+<h2>The same four models, a very different picture</h2>
+<div class="cols">
+<div class="col">
+<table>
+<tr class="head"><th style="width:46%;text-align:left">Validation AUC</th><th style="width:27%;text-align:right">L2 loss</th><th style="width:27%;text-align:right">Log loss</th></tr>
+<tr><td>Glassbox: L1 linear model</td><td style="text-align:right">0.597</td><td style="text-align:right">0.654</td></tr>
+<tr><td>Blackbox: boosted trees</td><td style="text-align:right">0.879</td><td style="text-align:right">0.881</td></tr>
+</table>
+<div class="card">
+<p class="ctitle">The glassbox can’t see a thin line</p>
+<p class="ctext">Zone fail rates don’t describe a scratch, and a linear model can’t combine them. The trees can: +0.227 AUC (95% CI +0.215 to +0.241).</p>
+</div>
+<div class="card">
+<p class="ctitle">Log loss beats L2, or ties</p>
+<p class="ctext">+0.057 for the glassbox. For the blackbox +0.002, with an interval that includes zero: a tie, so we keep log loss for its probabilities.</p>
+</div>
+</div>
+<div class="figcol" style="width:820px">
+<img src="/_blob/3825e9b007bb2bf4155634ac3b4fa844" alt="Validation AUC with 95% intervals: glassbox L2 0.597, glassbox log loss 0.654, blackbox L2 0.879, blackbox log loss 0.881. The two blackbox models are far ahead of the two glassbox models." style="width:820px;height:410px;object-fit:contain">
+<p class="note"><b>Same setup as the first run:</b> 60 / 20 / 20 split, each model tuned separately by cross-validation inside the training split, 24 configurations. The split is random here, because this dataset has no lot information.</p>
+</div>
+</div>
+<p class="foot">Solid = log loss, dashed = L2. Intervals resample wafers, 2,000 times. Validation: 7,398 wafers. Training AUC of the blackbox: 0.930.</p>
+<aside>The same four models as in the first run: an L1-penalised linear model and gradient-boosted trees, each with L2 loss and with log loss, tuned separately by cross-validation inside the training split, 24 configurations. The picture is very different. In the first run all four models were between 0.958 and 0.972. Here the glassbox reaches only 0.654 and the blackbox 0.881, a gap of 0.227. The reason: none of our features describes a thin line, and a linear model cannot combine zone fail rates into one. The trees can pick up combinations. On the loss: log loss beats L2 clearly for the glassbox, by 0.057. For the blackbox the difference is 0.002 and the interval includes zero, so it is a tie, and by our rule a tie goes to log loss because its output is a probability. The L2 blackbox puts 10 percent of its scores outside 0 to 1. One difference in setup: the split is stratified random, not by lot, because this dataset has no lot information.</aside>
+</section>
