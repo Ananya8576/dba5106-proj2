@@ -62,7 +62,7 @@ const img = (s, name, alt, x, y, w, h) => s.addImage({ path: fig(name), x, y, w,
 // 1. The problem
 pres.addSection({ title: "Problem and loss" });
 let s = add("LIGHT", "Problem and loss", "problem", "Which team gets this wafer?",
-  "DBA5106 Project 2, Version 2 (with data). Orange = failing die, light blue = passing die. Source: WM-811K (Kaggle, qingyi/wm811k-wafer-map).");
+  "DBA5106 Project 2, Version 2 (with data). Orange = failing die, light blue = passing die. Source: WM-811K (Kaggle, qingyi/wm811k-wafer-map, usability 5.0).");
 text(s, "A wafer shows a local cluster of failing dies. The model predicts which of two look-alike patterns it is.", { x: M, y: 1.6, w: 5.9, h: 0.8, fontSize: 16, color: C.text1 });
 card(s, M, 2.5, 5.9, 1.05, "Edge-Loc: hold the tool", "A tool’s edge process is drifting. It repeats on every wafer.");
 card(s, M, 3.7, 5.9, 1.05, "Loc: normal review", "A one-off particle or local event on that wafer.");

@@ -29,6 +29,6 @@
 <p style="font-size:24px;line-height:1.35;color:#4a5568">“Defect or no defect” is almost perfectly predictable here (AUC 0.995). We chose a harder, more useful question.</p>
 </div>
 </div>
-<p style="position:absolute;left:112px;bottom:56px;width:1500px;font-size:24px;color:#6a7179">Orange = failing die, light blue = passing die. Source: WM-811K (Kaggle, qingyi/wm811k-wafer-map).</p>
+<p style="position:absolute;left:112px;bottom:56px;width:1500px;font-size:24px;color:#6a7179">Orange = failing die, light blue = passing die. Source: WM-811K (Kaggle, qingyi/wm811k-wafer-map, usability 5.0).</p>
 <aside>The decision: a wafer shows a local cluster of failing dies. Edge-Loc means a tool's edge process is drifting, so we hold the tool. Loc is a one-off particle. The two mistakes don't cost the same: a missed Edge-Loc lets the tool keep damaging lots, a false alarm costs one unnecessary tool hold. We assume 5 to 1; that ratio is our assumption and we test other ratios later. Data: WM-811K, 8,782 wafers labelled Edge-Loc or Loc by engineers. We turned each wafer map into 10 physical features, such as fail rate by zone and where the largest cluster sits. We did not use the easier question, defect versus no defect, because it is almost perfectly predictable (AUC 0.995).</aside>
 </section>

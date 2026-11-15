@@ -4,19 +4,19 @@
     "log loss"
   ],
   "calibrator": "Platt",
-  "threshold": 0.1553,
+  "threshold": 0.1046,
   "cost_ratio_fn_fp": [
-    5.0,
+    10.0,
     1.0
   ],
   "validation_auc": {
-    "glassbox|L2": 0.5973,
-    "glassbox|log loss": 0.6541,
-    "blackbox|L2": 0.8788,
-    "blackbox|log loss": 0.881
+    "glassbox|L2": 0.885,
+    "glassbox|log loss": 0.9088,
+    "blackbox|L2": 0.9578,
+    "blackbox|log loss": 0.9631
   },
-  "test_auc_chosen": 0.8818,
-  "test_eval_loss": 0.3305,
-  "test_eval_loss_at_0.5": 0.5835,
-  "configurations_tried": 24
+  "test_auc_chosen": 0.9605,
+  "test_eval_loss": 0.2634,
+  "test_eval_loss_at_0.5": 0.6496,
+  "configurations_tried": 32
 }

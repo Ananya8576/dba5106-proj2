@@ -1,0 +1,18 @@
+{
+  "maps_read": 38015,
+  "duplicate_maps_dropped": 1024,
+  "share_of_dropped_duplicates_with_scratch": 0.9766,
+  "maps_kept": 36991,
+  "scratch_rate_kept": 0.4866,
+  "die_count_scratch": {
+    "min": 2061,
+    "max": 2065,
+    "sd": 0.63
+  },
+  "die_count_no_scratch": {
+    "min": 1843,
+    "max": 2234,
+    "sd": 21.32
+  },
+  "share_of_no_scratch_wafers_outside_the_scratch_die_count_range": 0.0519
+}

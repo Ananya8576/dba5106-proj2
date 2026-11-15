@@ -1,17 +1,15 @@
-# DBA5106 Project 2: two wafer-defect classifiers, compared
+# DBA5106 Project 2: two wafer-defect classification projects
 
 **Project 2, Version 2 (with data)**: a classification project presented in at most 6 slides. The brief is in [`Project 2.pdf`](Project%202.pdf).
 
-**What this repository shows.** The same classification pipeline is run on two semiconductor datasets, and the two runs are compared step by step. The pipeline, the search grids, the cost ratio and the decision rule are identical, so any difference in the outcome comes from the data.
+This repository holds **two independent projects** on semiconductor wafer maps. Each was designed for its own question: its own features, cost ratio, search grids and decision. Neither notebook refers to the other. They are compared only in the last section of this page, after both were finished.
 
-| | Run 1 | Run 2 |
+| | Project A | Project B |
 |---|---|---|
 | Question | Is this wafer's defect cluster **Edge-Loc** (hold the tool) or **Loc** (one-off particle)? | Does this wafer have a **scratch** among its defects? |
 | Data | WM-811K, real fab wafer maps | MixedWM38, mixed-type wafer maps |
 | Notebook | `project/Project2_Classification.ipynb` | `project/Project2_Classification_Scratch.ipynb` |
-| Model chosen | **Glassbox** | **Blackbox** |
-
-**Headline.** The same rule picks the glassbox on one dataset and the blackbox on the other. Where a linear model captures the signal (is the cluster at the edge?), the glassbox is enough. Where it can't (a thin line among other defects), the blackbox is worth its opacity.
+| Slides | `slides/Project2_Wafer_Defect_Routing.pptx` | `slides/Project2_Scratch_Detection.pptx` |
 
 ## What the project has to show
 Classification project
@@ -25,174 +23,225 @@ Classification project
 - Calibration: is your model calibrated? If not, how can you improve its calibration?
 - SHAP: Even if you decide to use a glassbox model, you still need to apply tree SHAP to one tree-based blackbox model. The interpretability part must contain both local and global SHAP.
 
-## 1. Data used
-| | Run 1: WM-811K, Edge-Loc vs Loc | Run 2: MixedWM38, Scratch vs not |
-|---|---|---|
-| Kaggle source | `qingyi/wm811k-wafer-map` | `co1d7era/mixedtype-wafer-defect-datasets` |
-| What it is | 811,457 wafer maps from a real fab; 172,950 labelled by engineers with one pattern each | 38,015 wafer maps, all 52 × 52; each labelled with every pattern it contains (38 combinations of 8 patterns) |
-| Real or synthetic | Real | Real, plus GAN-generated maps the authors added to balance the classes |
-| Rows used | 8,782 wafers labelled Edge-Loc or Loc | 36,991 wafers (all, after dropping duplicate maps) |
-| Positive class | Edge-Loc: 59.1% | Label includes Scratch: 48.7% (balanced by the authors, not a fab's real rate) |
-| Features | 10 spatial features per map | The same features minus `n_dies`: 9 |
-| Grouping | 5,008 lots | None in the dataset |
-| Built by | `project/build_features.py` | `project/build_features_mixedwm38.py` |
+# Project A: Edge-Loc vs Loc on WM-811K
 
-**The features** are computed from each wafer map by the same function in both runs: fail rate overall and in four zones (centre, middle, edge, outer ring), number of failing clusters, size and radius of the largest cluster, how one-sided the failures are, and the die count.
+## A1. Data used
+| | |
+|---|---|
+| Kaggle source | `qingyi/wm811k-wafer-map` (usability 5.0 out of 10) |
+| What it is | 811,457 wafer maps from a real fab; 172,950 labelled by engineers with one pattern each |
+| Rows used | 8,782 wafers labelled Edge-Loc or Loc |
+| Positive class | Edge-Loc: 59.1% |
+| Features | 10 spatial features per map: die count, fail rate overall and in four zones, number of failing clusters, size and radius of the largest cluster, how one-sided the failures are |
+| Grouping | 5,008 lots |
+| Built by | `project/build_features.py` |
 
-**The evaluation loss** is the same in both: (5 × missed positives + 1 × false alarms) / wafers. A miss means a tool problem keeps damaging wafers; a false alarm means one unnecessary tool hold. The 5:1 ratio is our assumption.
+**Decision supported.** Edge-Loc points to a tool's edge process drifting, so the tool is held. Loc is a one-off particle. **Evaluation loss:** (5 × missed Edge-Loc + 1 × false alarm) / wafers. The 5:1 ratio is an assumption.
 
-## 2. Sanity checks
-| Check | Run 1: WM-811K | Run 2: MixedWM38 |
-|---|---|---|
-| Missing cells | 0 | 0 |
-| Exact duplicates | 55 duplicate feature rows (0.6%), none with conflicting labels; kept | 1,024 exact duplicate maps, 97.7% of them Scratch; **dropped** |
-| Constant features | None | None |
-| Shortcut features | None found: no single feature is suspiciously strong (best single-feature AUC 0.892 in the screening) | **`n_dies` gives the label away**: scratch wafers have 2,061–2,065 dies, the others 1,843–2,234. **Deleted** |
-| Class balance | 59.1% positive | 48.7% positive (artificial) |
-| Wafers per group | Median 1 per lot, up to 25 | No lots |
-| Split | 60 / 20 / 20 **by lot**, stratified | 60 / 20 / 20 stratified random |
-| Train / validation / test | 5,268 / 1,756 / 1,758 | 22,195 / 7,398 / 7,398 |
-| Positives in validation | 1,038 | 3,600 |
-| Cleaning done | None: no rows dropped or imputed | Duplicates dropped, one feature deleted |
-| Mixed labels | One pattern per wafer | 29,000 wafers carry more than one pattern; 17,000 scratched wafers also carry another |
+## A2. Sanity checks
+| Check | Result |
+|---|---|
+| Missing cells | 0 |
+| Duplicates | 55 duplicate feature rows (0.6%), none with conflicting labels; kept |
+| Constant features | None |
+| Leakage | No single feature is suspiciously strong (best single-feature AUC 0.892 in the screening) |
+| Class balance | 59.1% positive; 1,038 positives in validation |
+| Split | 60 / 20 / 20 **by lot**, stratified: 5,268 / 1,756 / 1,758 wafers |
+| Cleaning | None: no rows dropped or imputed |
 
-Both shortcut findings for run 2 came from the screening notebook. With them left in, run 2's screening AUC was 0.917; cleaned and tuned it is 0.881.
-
-## 3. Models compared
-The same four models in both runs. Within each row only the training loss changes.
-
+## A3. Models
 | | L2 loss | Surrogate loss (log loss) |
 |---|---|---|
-| **Glassbox:** L1-penalised linear model on standardised features | LASSO regression on the 0/1 label | L1 logistic regression |
-| **Blackbox:** gradient-boosted trees (scikit-learn `HistGradientBoosting`) | Squared error | Log loss |
+| **Glassbox:** L1-penalised linear model | LASSO regression on the 0/1 label | L1 logistic regression |
+| **Blackbox:** gradient-boosted trees | Squared error | Log loss |
 
-**Tuning, identical in both runs.** Each model is tuned separately by 5-fold cross-validated AUC inside the training split: 6 penalty values for the glassbox, tree depth (2, 3, 5) × number of trees (100, 300) for the blackbox. That is 24 configurations per run. Validation is used only to compare the four tuned models and set the threshold. Test is used once.
+- **Tuning:** each model separately, by 5-fold cross-validated AUC inside the training split (folds by lot). 6 penalty values for the glassbox; depth (2, 3, 5) × trees (100, 300) for the blackbox. 24 configurations.
+- **Decision rule, fixed in advance:** choose the blackbox only if its validation AUC is distinguishably higher and it lowers the evaluation loss by at least 10%.
 
-**Settings chosen by cross-validation**
+## A4. Model comparison (validation)
+| Model | Train loss | Chosen setting | Training AUC | Validation AUC (95% CI) |
+|---|---|---|---|---|
+| Glassbox | L2 | alpha = 0.0003 | 0.960 | 0.958 (0.947–0.968) |
+| Glassbox | Log loss | C = 10 | 0.969 | **0.966** (0.957–0.974) |
+| Blackbox | L2 | depth 3, 300 trees | 0.988 | 0.966 (0.954–0.975) |
+| Blackbox | Log loss | depth 5, 300 trees | 1.000 | **0.972** (0.963–0.980) |
 
-| Model | Run 1 | Run 2 |
+- Log loss beats L2 for both: +0.008 (glassbox) and +0.007 (blackbox); both intervals exclude zero.
+- The blackbox's AUC is +0.006 higher (CI +0.0001 to +0.012), but its evaluation loss is not lower: 0.149 vs 0.143.
+- **Chosen: the glassbox, L1 logistic regression.**
+
+## A5. Results
+| Step | Result |
+|---|---|
+| Threshold (validation) | 0.28 on the raw score. Loss 0.196 → 0.143 (−27%) against 0.5; accuracy 91.6% → 89.8% |
+| Calibration (validation) | ECE 0.031 → 0.021 with isotonic regression fitted on out-of-fold training scores; AUC unchanged. Calibrated threshold 0.22 against the theoretical 0.167 |
+| Tree SHAP (on the boosted trees) | `largest_cluster_radius` 4.0, `edge_fail_rate` 1.8, `outer_ring_fail_rate` 0.9. The model asks whether the cluster is at the edge |
+| Test, used once | AUC 0.958 (0.946–0.969); loss 0.181 per wafer (0.143–0.223), 56% below holding every wafer (0.409); recall 97.3%, precision 85.0%, accuracy 88.3% |
+| Audit of the choice | The blackbox scores 0.158 on test, slightly better; the difference (−0.023, CI −0.051 to +0.007) isn't distinguishable from zero |
+
+## A6. Flags
+1. **Kaggle usability is 5.0 out of 10.** The brief says to find a high-usability dataset; this one is not.
+2. **The source dataset is large** (811,457 maps, 2 GB), against "avoid large datasets". The project uses an 8,782-wafer subset.
+3. **Feature extraction is preprocessing**, against "avoid data cleaning".
+4. **The 5:1 cost ratio is an assumption.**
+5. **The decision is not a pure validation-AUC ranking.** The blackbox has the highest AUC; the glassbox was chosen on evaluation loss and interpretability.
+6. **On test the blackbox does slightly better** (0.158 vs 0.181); not distinguishable from zero.
+7. **The glassbox's coefficients are hard to read.** All 10 features stay, and correlated ones get large opposite-sign coefficients.
+8. **Test is worse than validation** (0.181 vs 0.143).
+9. **Labels are engineers' judgements**, and some look wrong.
+
+# Project B: scratch detection on MixedWM38
+
+## B1. Data used
+| | |
+|---|---|
+| Kaggle source | `co1d7era/mixedtype-wafer-defect-datasets` (usability 7.5 out of 10) |
+| What it is | 38,015 wafer maps, all 52 × 52; each labelled with every pattern it contains (38 combinations of 8 patterns). Real maps plus generated ones the authors added to balance the classes |
+| Rows used | 36,991 wafers, after dropping duplicate maps |
+| Positive class | Label includes Scratch: 48.7% (balanced by the authors, not a fab's real rate) |
+| Features | 16: nine background features (fail rates by zone, clusters) and **seven line features** built for this question (thin structures, lined-up failing dies, straight-line evidence) |
+| Grouping | None in the dataset |
+| Built by | `project/build_features_mixedwm38.py` |
+
+**Decision supported.** A scratch comes from mechanical contact and repeats until the handler is fixed; dies next to it can pass test and fail later. A flag holds the handling path and sends the wafer to neighbour-die screening. **Evaluation loss:** (10 × missed scratch + 1 × false alarm) / wafers. A miss carries a repeating cost and a reliability cost. The 10:1 ratio is an assumption.
+
+## B2. Sanity checks
+| Check | Result |
+|---|---|
+| Missing cells | 0 |
+| Duplicates | 1,024 exact duplicate maps, 97.7% of them scratched; **dropped** |
+| Die count | Scratched wafers have 2,061–2,065 dies; unscratched ones range from 1,843 to 2,234, and 5.2% of them have a count no scratched wafer has. No physical link to a scratch, so it is **not used as a feature** |
+| Position | Scratches in these maps tend to sit in the same region. Position is **left out of the features** on purpose |
+| Class balance | 48.7% positive (artificial); 3,600 positives in validation |
+| Split | 60 / 20 / 20 stratified random: 22,195 / 7,398 / 7,398 wafers |
+| Signal check (training split) | The seven line features are the seven strongest single features (AUC 0.63–0.73); no background feature exceeds 0.58 |
+| Mixed labels | 29,000 wafers carry more than one pattern; 17,000 scratched wafers also carry another |
+
+## B3. Models
+| | L2 loss | Surrogate loss (log loss) |
 |---|---|---|
-| Glassbox, L2 | alpha = 0.0003 | alpha = 0.0003 |
-| Glassbox, log loss | C = 10 | C = 10 |
-| Blackbox, L2 | depth 3, 300 trees | depth 5, 300 trees |
-| Blackbox, log loss | depth 5, 300 trees | depth 5, 300 trees |
+| **Glassbox:** L1-penalised linear model | LASSO regression on the 0/1 label | L1 logistic regression |
+| **Blackbox:** gradient-boosted trees | Squared error | Log loss |
 
-**Decision rule, fixed before looking at validation, identical in both runs**
-1. Within a model type, take the higher validation AUC; on a tie take log loss, because its output is a probability.
-2. Between model types, choose the blackbox only if its validation AUC is distinguishably higher **and** it lowers the evaluation loss by at least 10%. Otherwise choose the glassbox.
+- **Tuning:** each model separately, by 5-fold cross-validated AUC inside the training split. 7 penalty values for the glassbox; depth (3, 5, 8) × trees (200, 500, 1,000) for the blackbox. 32 configurations.
+- **Decision rule, fixed in advance:** choose the blackbox only if its validation AUC is distinguishably higher and it lowers the evaluation loss by at least 10%.
 
-## 4. Model comparison
-**Validation AUC (95% interval)**
+## B4. Model comparison (validation)
+| Model | Train loss | Chosen setting | Training AUC | Validation AUC (95% CI) |
+|---|---|---|---|---|
+| Glassbox | L2 | alpha = 0.0001 | 0.886 | 0.885 (0.878–0.892) |
+| Glassbox | Log loss | C = 100 | 0.910 | **0.909** (0.902–0.915) |
+| Blackbox | L2 | depth 8, 500 trees | 0.984 | 0.958 (0.954–0.962) |
+| Blackbox | Log loss | depth 8, 200 trees | 0.989 | **0.963** (0.959–0.967) |
 
-| Model | Train loss | Run 1 | Run 2 |
-|---|---|---|---|
-| Glassbox | L2 | 0.958 (0.947–0.968) | 0.597 (0.584–0.610) |
-| Glassbox | Log loss | **0.966** (0.957–0.974) | **0.654** (0.641–0.666) |
-| Blackbox | L2 | 0.966 (0.954–0.975) | 0.879 (0.871–0.886) |
-| Blackbox | Log loss | **0.972** (0.963–0.980) | **0.881** (0.874–0.888) |
+- Log loss beats L2 for both: +0.024 (glassbox) and +0.005 (blackbox); both intervals exclude zero.
+- The blackbox's AUC is +0.054 higher (CI +0.049 to +0.060), and it lowers the evaluation loss by 38%: 0.250 vs 0.406.
+- **Chosen: the blackbox, boosted trees with log loss.** The choice holds for every cost ratio from 1 to 20.
 
-**Training AUC, to show why models are compared on validation**
+## B5. Results
+| Step | Result |
+|---|---|
+| Threshold (validation) | 0.117 on the raw score. Loss 0.613 → 0.250 (−59%) against 0.5; accuracy 89.1% → 81.2%; misses 414 → 51, false alarms 395 → 1,339 |
+| Calibration (validation) | ECE 0.011 → 0.009 with Platt scaling fitted on out-of-fold training scores; AUC unchanged. Calibrated threshold 0.105 against the theoretical 0.091 |
+| Tree SHAP (on the chosen model) | `outer_ring_fail_rate` 1.9, `thin_fail_rate` 1.4, `line_score_top20` 1.2. The seven line features carry 49% of the attribution |
+| Local SHAP | Most confident scratch: a scratch-only wafer with a visible line, led by line features. Costliest mistake: a wafer where large blobs hide the scratch |
+| Test, used once | AUC 0.961 (0.957–0.964); loss 0.263 per wafer (0.242–0.286), 49% below flagging every wafer (0.513); recall 98.4%, precision 72.3%, accuracy 80.8% |
+| Audit of the choice | The glassbox scores 0.426 on test, 0.162 worse (CI +0.134 to +0.191) |
 
-| Model | Run 1: train → validation | Run 2: train → validation |
+## B6. Flags
+1. **Half of the model's attribution is background, and the top feature is `outer_ring_fail_rate`.** Some of that is legitimate context; some may be which other patterns come with a Scratch label in this dataset.
+2. **The class balance is artificial**, partly from generated maps, so the cost per wafer is not a forecast for a fab.
+3. **Cleaning and feature extraction were needed**, against "avoid data cleaning".
+4. **The 10:1 cost ratio is an assumption.**
+5. **Two searches ended at the edge of their grids** (blackbox depth 8; glassbox weakest penalty, so all 16 features stay).
+6. **This test split had been scored once before**, by an earlier version with a different feature set. The current features and grids were designed on the training split.
+7. **Random split**, because the dataset has no lot information.
+8. **Kaggle usability is 7.5 out of 10.**
+
+# Comparison, made after both projects were finished
+Nothing in this section fed back into either project.
+
+| | Project A: Edge-Loc vs Loc | Project B: Scratch vs not |
 |---|---|---|
-| Glassbox, log loss | 0.969 → 0.966 | 0.647 → 0.654 |
-| Blackbox, log loss | 1.000 → 0.972 | 0.930 → 0.881 |
+| Data | Real fab maps; 8,782 wafers; 59% positive | Real + generated maps; 36,991 wafers; 49% positive (artificial) |
+| Kaggle usability | 5.0 | 7.5 |
+| Cleaning needed | None | Duplicates dropped; die count withheld |
+| Features | 10 general spatial features | 9 background + 7 line features |
+| Cost ratio (miss : false alarm) | 5 : 1 | 10 : 1 |
+| Configurations tried | 24 | 32 |
+| Validation AUC, glassbox L2 / log loss | 0.958 / 0.966 | 0.885 / 0.909 |
+| Validation AUC, blackbox L2 / log loss | 0.966 / 0.972 | 0.958 / 0.963 |
+| Log loss − L2, glassbox / blackbox | +0.008 / +0.007 | +0.024 / +0.005 |
+| Blackbox − glassbox AUC | +0.006 | +0.054 |
+| Does the blackbox cut the cost by 10%? | No (4% higher) | Yes (38% lower) |
+| **Model chosen** | **Glassbox** | **Blackbox** |
+| Threshold; saving against 0.5 | 0.28; −27% | 0.117; −59% |
+| Calibration error, before → after | 0.031 → 0.021 (isotonic) | 0.011 → 0.009 (Platt) |
+| Calibrated threshold vs theory | 0.22 vs 0.167 | 0.105 vs 0.091 |
+| Top SHAP feature | `largest_cluster_radius` | `outer_ring_fail_rate`, then two line features |
+| Test AUC | 0.958 | 0.961 |
+| Test loss, against flagging every wafer | 0.181 vs 0.409 (−56%) | 0.263 vs 0.513 (−49%) |
+| Validation → test loss | 0.143 → 0.181 | 0.250 → 0.263 |
+| Audit: the model not chosen, on test | Slightly better, not distinguishable | Clearly worse |
 
-**The judgement checks**
-
-| Check | Run 1 | Run 2 |
-|---|---|---|
-| Log loss − L2, glassbox | +0.008 (CI +0.003 to +0.014) | +0.057 (CI +0.050 to +0.064) |
-| Log loss − L2, blackbox | +0.007 (CI +0.003 to +0.011) | +0.002 (CI −0.0005 to +0.005): a tie |
-| L2 scores outside 0–1, glassbox / blackbox | 20% / 29% | 0% / 10% |
-| Blackbox − glassbox AUC | +0.006 (CI +0.0001 to +0.012) | +0.227 (CI +0.215 to +0.241) |
-| Evaluation loss at best threshold, glassbox / blackbox | 0.143 / 0.149 | 0.512 / 0.328 |
-| Does the blackbox cut the cost by 10%? | No: it is 4% higher | Yes: 36% lower |
-| **Model chosen** | **Glassbox, log loss** | **Blackbox, log loss** |
-| Cost ratios (1 to 10) where the choice holds | 3 to 8 | All |
-
-In run 2 the glassbox's best loss (0.512) equals the cost of holding the tool for every wafer (0.513), so it adds nothing.
-
-## 5. Results comparison
-**Threshold (validation)**
-
-| | Run 1 | Run 2 |
-|---|---|---|
-| Threshold that minimises the evaluation loss (raw score) | 0.28 | 0.175 |
-| Evaluation loss at 0.5 → at that threshold | 0.196 → 0.143 (−27%) | 0.595 → 0.328 (−45%) |
-| Missed positives, 0.5 → tuned | 49 → 18 | 714 → 68 |
-| False alarms, 0.5 → tuned | 99 → 161 | 835 → 2,088 |
-| Accuracy, 0.5 → tuned | 91.6% → 89.8% | 79.1% → 70.9% |
-
-In both runs accuracy falls while the cost falls, which is why the evaluation loss, not accuracy, drives the decision.
-
-**Calibration (validation)**
-
-| | Run 1 | Run 2 |
-|---|---|---|
-| Calibration error (ECE) of the chosen model | 0.031 | 0.013 |
-| Fix kept (fitted on out-of-fold training scores) | Isotonic regression | Platt scaling |
-| ECE after the fix; AUC | 0.021; unchanged | 0.009; unchanged |
-| Worst-calibrated model of the four | Glassbox, L2 (0.107) | Glassbox, L2 (0.048) |
-| Best threshold on calibrated probabilities vs theory (0.167) | 0.22 | 0.155 |
-
-**Tree SHAP on the log-loss boosted trees (validation)**
-
-| | Run 1 | Run 2 |
-|---|---|---|
-| Top features (mean absolute SHAP) | `largest_cluster_radius` 4.0, `edge_fail_rate` 1.8, `outer_ring_fail_rate` 0.9 | `edge_fail_rate` 1.2, `outer_ring_fail_rate` 1.0, `n_fail_clusters` 0.7 |
-| Does it match the physics? | Yes: it asks whether the cluster is at the edge | No: no feature describes a line, and the model reads side effects |
-| Most confident positive | Cluster at the edge (radius 0.93) | A Donut + Edge-Ring + Loc + Scratch wafer with no visible line |
-| Costliest mistake | A wafer labelled Edge-Loc with its cluster near the centre: probably a labelling error | An Edge-Loc + Scratch wafer scored 0.013 |
-| Agreement with the glassbox's coefficients (rank correlation) | 0.43 | −0.15 |
-
-**Test split, used once**
-
-| | Run 1 | Run 2 |
-|---|---|---|
-| AUC (95% CI) | 0.958 (0.946–0.969) | 0.882 (0.874–0.889) |
-| Evaluation loss per wafer (95% CI) | 0.181 (0.143–0.223) | 0.330 (0.316–0.345) |
-| Loss from holding every wafer | 0.409 | 0.513 |
-| Saving against holding every wafer | 56% | 36% |
-| Recall / precision / accuracy | 97.3% / 85.0% / 88.3% | 98.4% / 62.1% / 70.0% |
-| Validation → test loss | 0.143 → 0.181 | 0.328 → 0.330 |
-| Audit: the model not chosen, on test | Blackbox 0.158, slightly better (difference −0.023, CI −0.051 to +0.007) | Glassbox 0.513, far worse (difference +0.183, CI +0.168 to +0.197) |
-
-The loss levels are not comparable between runs, because run 2's 49% positive rate is artificial. The patterns are.
+The loss levels can't be compared directly: the cost ratios differ and project B's positive rate is artificial. The patterns can.
 
 **What the comparison shows**
-- **The same rule gives opposite model choices**, for a reason that can be explained: a linear model captures "edge vs interior" but not "a thin line among other defects".
-- **Log loss beats or ties L2 in every case.** It never loses, and the L2 versions give scores outside 0–1.
-- **Tuning the threshold pays off in both runs**, and more where the model is weaker.
-- **Better calibration puts the searched threshold closer to the theoretical one** (0.155 in run 2, 0.22 in run 1, against 0.167).
-- **A larger validation split removes most of the gap between validation and test** (7,398 wafers in run 2 against 1,756 in run 1).
-- **A high AUC does not mean the model has learned the right thing.** Run 2's SHAP shows it reads edge fail rates, not scratches.
+- **Each project reached its own model choice.** In A a linear model captures the signal (is the cluster at the edge?), so the blackbox adds too little to justify itself. In B the scratch evidence interacts with the background, and the blackbox cuts the cost by more than a third.
+- **Log loss beat L2 in all four cases**, and every L2 model gave some scores outside 0–1.
+- **Tuning the threshold to the evaluation loss paid off in both**, at the price of lower accuracy in both.
+- **Both chosen models were close to calibrated**, and in both the searched threshold landed near the theoretical one.
+- **The larger validation split in B left a smaller gap between validation and test.**
+- **A is the cleaner story to defend:** real data, no cleaning, and an explanation that matches the physics. **B has the stronger modelling result**, with caveats about generated data and background features.
 
-## 6. Flags
-These are the places where the work departs from the brief or is weaker than it looks.
+## Slides
+| Project | PowerPoint | Outline | Online deck |
+|---|---|---|---|
+| A: Edge-Loc vs Loc | `slides/Project2_Wafer_Defect_Routing.pptx` | `slides/SLIDES.md` | Link in the outline |
+| B: Scratch vs not | `slides/Project2_Scratch_Detection.pptx` | `slides/SLIDES_SCRATCH.md` | Link in the outline |
 
-**Both runs**
-1. **Kaggle usability ratings not verified.** Kaggle's API needs a login. Check both dataset pages before presenting.
-2. **The 5:1 cost ratio is our assumption.** Neither dataset has cost data.
-3. **Feature extraction is preprocessing**, against the brief's "avoid data cleaning".
-4. **The brief allows at most 6 slides.** There is one 6-slide deck per run, so presenting both in full would exceed it.
+Each deck has six slides with speaker notes and covers its own project only. The brief allows at most 6 slides, so the two decks can't both be presented in full.
 
-**Run 1 (WM-811K)**
-5. **The source dataset is large** (811,457 maps, 2 GB), against "avoid large datasets". The run uses an 8,782-wafer subset.
-6. **The model decision is not a pure validation-AUC ranking.** The blackbox has the highest validation AUC; the glassbox was chosen on evaluation loss and interpretability.
-7. **On test the blackbox does slightly better** (loss 0.158 vs 0.181); the difference isn't distinguishable from zero.
-8. **The glassbox's coefficients are hard to read.** All 10 features stay, and correlated ones get large opposite-sign coefficients.
-9. **Test is worse than validation** (0.181 vs 0.143), as expected when the model and threshold are picked on validation.
-10. **Labels are engineers' judgements**, and some look wrong.
+## Repository layout
+| Path | What it is |
+|---|---|
+| `Project 2.pdf` | Project brief (lecture slides) |
+| `project/Project2_Classification.ipynb` | Project A, with outputs |
+| `project/Project2_Classification_Scratch.ipynb` | Project B, with outputs |
+| `project/build_features.py`, `project/build_features_mixedwm38.py` | Build each project's feature table and wafer maps from the Kaggle files |
+| `project/data/` | Feature tables and wafer maps for both projects, and project B's cleaning report |
+| `project/figures/`, `project/figures_scratch/` | Figures saved by each notebook |
+| `project/results_summary.json`, `project/results_summary_scratch.json` | Key results of each project |
+| `slides/` | Both PowerPoint files, their outlines, the published deck sources (`deck/`, `deck_scratch/`), slide-sized figures (`figures/`, `figures_scratch/`) and the scripts that build them |
+| `EDA/Project2_Dataset_EDA.ipynb` | Dataset screening: 15 candidates, the same checks on each, and the ranking |
+| `EDA/output.csv` | Scorecard export from the first screening run (A–J only) |
 
-**Run 2 (MixedWM38)**
-11. **The model does not look at the scratch.** It has probably learned which mixes of patterns come with the Scratch label in this dataset, which would not transfer to a fab.
-12. **The class balance is artificial**, partly from GAN-generated maps.
-13. **One feature had to be deleted and 1,024 duplicates dropped** before the task was honest.
-14. **The blackbox search ended at the edge of its grid** (depth 5, 300 trees). The grid was kept identical to run 1 for comparability.
-15. **Random split, not by lot.** Near-duplicate generated maps could sit in different splits.
+## How to run
+```bash
+pip install pandas numpy scikit-learn scipy matplotlib shap
+```
+Project A (about 2 minutes):
+```bash
+cd project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification.ipynb
+```
+Project B (about 5 minutes):
+```bash
+cd project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification_Scratch.ipynb
+```
+Both notebooks read `project/data/`, so they don't need Kaggle. To rebuild that data from the source files (needs `kagglehub`; project A needs several GB of RAM):
+```bash
+python project/build_features.py
+```
+```bash
+python project/build_features_mixedwm38.py
+```
 
-## 7. How the two datasets were chosen
+## Next steps
+1. Decide which project to present within the brief's 6 slides, or how to cut the two decks down to fit.
+2. Decide how to defend each cost ratio in the Q&A, or replace it with a figure you can source.
+3. For project A, be ready for the usability question: the dataset scores 5.0 out of 10.
+
+## Appendix: how the two datasets were chosen
 Both come from screening 15 candidates in `EDA/Project2_Dataset_EDA.ipynb`, which runs the same checks on each. The two semiconductor datasets that ranked first and second became the two runs. The screening used untuned models and random splits; the project notebooks tune the models and, where lots exist, split by lot.
 
 ### Datasets screened
@@ -236,7 +285,7 @@ A 20% test split is held out before any check that uses labels. All the models a
 | Rank | Dataset | Evidence | Main risk |
 |---|---|---|---|
 | **1** | **D2 · WM-811K Edge-Loc vs Loc** (semiconductor, real) | All checks pass except preprocessing. 1,038 validation positives (AUC ± 0.005). Glassbox 0.963 vs blackbox 0.974; the gap (+0.011, sd 0.002) is stable. Best threshold 0.26 ≈ cost-ratio threshold 0.25. The L2 glassbox is clearly worse calibrated (ECE 0.10 vs 0.027). SHAP top `largest_cluster_radius` (44%), physically meaningful. | The small gap makes the decision "choose the glassbox". Needs the 2 GB legacy pickle and feature extraction. |
-| **2** | **K · MixedWM38 Scratch, cleaned** (semiconductor) | The artefact check confirmed `n_dies` is a shortcut: Scratch wafers have 2,061–2,065 dies (sd 0.6), others 1,843–2,234 (sd 21.7). The 1,024 duplicate rows are 97.7% Scratch. After deduplicating and dropping `n_dies`: glassbox 0.617 vs blackbox 0.876, the largest gap of any candidate. | The tuned model reads edge fail rates, not the scratch (section 5). The 49% prevalence is artificial (GAN balancing). |
+| **2** | **K · MixedWM38 Scratch, cleaned** (semiconductor) | The artefact check confirmed `n_dies` is a shortcut: Scratch wafers have 2,061–2,065 dies (sd 0.6), others 1,843–2,234 (sd 21.7). The 1,024 duplicate rows are 97.7% Scratch. After deduplicating and dropping `n_dies`: glassbox 0.617 vs blackbox 0.876, the largest gap of any candidate. | The screening used general features only. The 49% prevalence is artificial (GAN balancing). |
 | **3** | **E · Steel plates, Bumps vs rest** (real, not semiconductor) | No cleaning, no missing data. Glassbox 0.839 vs blackbox 0.923 (+0.085, sd 0.017). Threshold saving 77%. SHAP spread out (top feature 11%). | Not semiconductor. Correlated pairs (use LASSO). About 8 validation positives per calibration bin. |
 | 4 | A · AI4I | Gap +0.077 (sd 0.015); a glassbox with physics features reaches 0.914. | Synthetic, 3.4% positive, 27 contradictory labels, heavily used on Kaggle. |
 | 5 | G · Manufacturing defects | No flags. Gap +0.071. | Threshold saving 4%, synthetic, defects are the 84% majority. |
@@ -254,49 +303,3 @@ pip install kagglehub pandas numpy scikit-learn scipy matplotlib shap requests
 2. Run all cells. A dataset that fails to load is skipped, and the scorecard is built from whatever loaded.
 3. WM-811K needs several GB of RAM to load the full pickle.
 
-## 8. Slides
-| Run | PowerPoint | Outline | Online deck |
-|---|---|---|---|
-| Run 1: Edge-Loc vs Loc | `slides/Project2_Wafer_Defect_Routing.pptx` | `slides/SLIDES.md` | Link in the outline |
-| Run 2: Scratch vs not | `slides/Project2_Scratch_Detection.pptx` | `slides/SLIDES_SCRATCH.md` | Link in the outline |
-
-Each deck has six slides with speaker notes. The last slide of the run 2 deck is the side-by-side comparison.
-
-## 9. Repository layout
-| Path | What it is |
-|---|---|
-| `Project 2.pdf` | Project brief (lecture slides) |
-| `project/Project2_Classification.ipynb` | Run 1, with outputs |
-| `project/Project2_Classification_Scratch.ipynb` | Run 2, with outputs and the side-by-side table |
-| `project/build_features.py`, `project/build_features_mixedwm38.py` | Build each run's feature table and wafer maps from the Kaggle files |
-| `project/data/` | Feature tables and wafer maps for both runs |
-| `project/figures/`, `project/figures_scratch/` | Figures saved by each notebook |
-| `project/results_summary.json`, `project/results_summary_scratch.json` | Key results of each run |
-| `slides/` | Both PowerPoint files, their outlines, the published deck sources (`deck/`, `deck_scratch/`), slide-sized figures (`figures/`, `figures_scratch/`) and the scripts that build them |
-| `EDA/Project2_Dataset_EDA.ipynb` | Dataset screening: 15 candidates, the same checks on each, and the ranking |
-| `EDA/output.csv` | Scorecard export from the first screening run (A–J only) |
-
-## 10. How to run
-```bash
-pip install pandas numpy scikit-learn scipy matplotlib shap
-```
-Run 1 (about 2 minutes):
-```bash
-cd project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification.ipynb
-```
-Run 2 (about 4 minutes):
-```bash
-cd project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification_Scratch.ipynb
-```
-Both notebooks read `project/data/`, so they don't need Kaggle. To rebuild that data from the source files (needs `kagglehub`; run 1 needs several GB of RAM):
-```bash
-python project/build_features.py
-```
-```bash
-python project/build_features_mixedwm38.py
-```
-
-## Next steps
-1. Check the Kaggle usability ratings for `qingyi/wm811k-wafer-map` and `co1d7era/mixedtype-wafer-defect-datasets`.
-2. Decide how to fit two runs into the brief's 6 slides: present one deck and use the other's comparison slide, or cut both down.
-3. Decide how to defend the 5:1 cost ratio in the Q&A, or replace it with a figure you can source.

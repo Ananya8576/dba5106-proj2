@@ -1,31 +1,31 @@
 <section id="decision" data-transition="fade">
-<h2>This time the blackbox wins, at threshold 0.175</h2>
+<h2>We chose the blackbox, at threshold 0.117</h2>
 <div class="cols">
 <div class="col">
 <div class="card">
-<p class="ctitle">Same rule, opposite answer</p>
-<p class="ctext">The blackbox must cut the cost by 10% to earn its opacity. Here it cuts it by 36%: 0.328 per wafer against 0.512.</p>
+<p class="ctitle">The blackbox earns its opacity</p>
+<p class="ctext">AUC is 0.054 higher (95% CI +0.049 to +0.060), and the evaluation loss is 38% lower: 0.250 per wafer against 0.406.</p>
 </div>
 <div class="card">
-<p class="ctitle">The glassbox adds nothing</p>
-<p class="ctext">Its best cost, 0.512, is the cost of holding the tool for every wafer (0.513).</p>
+<p class="ctitle">Rule set before looking</p>
+<p class="ctext">An engineer acts on a flag, so a readable model has value. The blackbox had to cut the cost by 10% to be chosen.</p>
 </div>
 <div class="row">
 <div class="stat">
-<p class="num accent">−45%</p>
-<p class="lbl">cost vs a 0.5 threshold (0.595 → 0.328)</p>
+<p class="num accent">−59%</p>
+<p class="lbl">cost vs a 0.5 threshold (0.613 → 0.250)</p>
 </div>
 <div class="stat">
-<p class="num">−8.2 pts</p>
-<p class="lbl">accuracy (79.1% → 70.9%)</p>
+<p class="num">−7.9 pts</p>
+<p class="lbl">accuracy (89.1% → 81.2%)</p>
 </div>
 </div>
 </div>
 <div class="figcol" style="width:860px">
-<img src="/_blob/d9e2aca5acda88c934db038338f9dc0c" alt="Cost per wafer against the decision threshold for the blackbox. Our evaluation loss is lowest at a threshold of 0.175. The misclassification rate is lowest near 0.49." style="width:860px;height:497px;object-fit:contain">
-<p class="note">At 0.175 we miss 68 scratched wafers instead of 714, for 2,088 false alarms instead of 835.</p>
+<img src="/_blob/1ba69e374db1f4ad89392f5dbfc9200a" alt="Cost per wafer against the decision threshold for the blackbox. Our evaluation loss is lowest at a threshold of 0.117. The misclassification rate is lowest near 0.48." style="width:860px;height:497px;object-fit:contain">
+<p class="note">At 0.117 we miss 51 scratched wafers instead of 414, for 1,339 false alarms instead of 395.</p>
 </div>
 </div>
-<p class="foot">Validation split. Minimising plain misclassification would leave the threshold at 0.49. The choice holds for every cost ratio from 1 to 10.</p>
-<aside>We applied the same decision rule as in the first run, fixed in advance: choose the blackbox only if its validation AUC is distinguishably higher and it lowers the evaluation loss by at least 10 percent. In the first run the blackbox failed that test and we chose the glassbox. Here it passes easily: the AUC gap is 0.227 and the cost is 36 percent lower, 0.328 against 0.512. In fact the glassbox's best cost equals the cost of simply holding the tool for every wafer, so it adds nothing. Then the threshold. The cost-minimising threshold is 0.175, not 0.5. That cuts the cost by 45 percent, by catching 646 more scratched wafers for 1,253 more false alarms. Accuracy falls by 8 points while the cost falls by almost half, which again shows why the evaluation loss, not accuracy, should drive the decision. Unlike the first run, the choice of model holds for every cost ratio from 1 to 10.</aside>
+<p class="foot">Validation split. Minimising plain misclassification would leave the threshold at 0.48. The model choice holds for every cost ratio from 1 to 20.</p>
+<aside>The decision rule was fixed before we looked at validation. An engineer has to act on a flag by holding a handler, so a model they can read is worth something. We said we would choose the blackbox only if its validation AUC was distinguishably higher and it lowered the evaluation loss by at least 10 percent. It does both: AUC 0.963 against 0.909, and a cost of 0.250 against 0.406, which is 38 percent lower. So we chose the boosted trees trained with log loss. Then the threshold. With a miss costing ten false alarms, the cost-minimising threshold is 0.117, not 0.5. That cuts the cost by 59 percent: misses fall from 414 to 51, and false alarms rise from 395 to 1,339. Accuracy falls by about 8 points while the cost falls by more than half, which is why the evaluation loss, not accuracy, should drive the decision. We also varied the cost ratio from 1 to 20: the blackbox is the cheaper model at every ratio.</aside>
 </section>

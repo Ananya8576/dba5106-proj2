@@ -9,7 +9,7 @@ Every number below comes from `project/Project2_Classification.ipynb`.
 
 ## Slide 1: The decision, the data, the loss
 - **Decision:** a wafer shows a local cluster of failing dies. Is it **Edge-Loc** (a tool's edge process is drifting: hold the tool) or **Loc** (a one-off particle: normal review)?
-- **Data:** WM-811K, real fab wafer maps. 8,782 wafers labelled Edge-Loc (59%) or Loc. We turned each map into 10 physical features (where the failures are, how clustered).
+- **Data:** WM-811K, real fab wafer maps (Kaggle usability 5.0). 8,782 wafers labelled Edge-Loc (59%) or Loc. We turned each map into 10 physical features (where the failures are, how clustered).
 - **Evaluation loss:** a missed Edge-Loc costs 5 unnecessary tool holds. Loss = (5·FN + FP) / n. This is our assumption; slide 4 shows other ratios.
 - **Why not "defect vs no defect"?** It's almost perfectly predictable (AUC 0.995), so we changed the question.
 - Figure: two wafer maps (crop from `09_shap_local.png`), one of each class.

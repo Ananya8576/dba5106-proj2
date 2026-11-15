@@ -1,34 +1,34 @@
 <section id="problem" data-transition="fade">
-<p class="eyebrow">DBA5106 · Project 2 · Second run, same pipeline</p>
+<p class="eyebrow">DBA5106 · Project 2 · Version 2, with data</p>
 <h1>Is there a scratch on this wafer?</h1>
 <div class="cols" style="align-items:center">
 <div class="col">
-<p class="lead">A scratch is a thin line of failing dies from mechanical contact. Here it has to be found among other defects on the same wafer.</p>
+<p class="lead">A scratch is a thin line of failing dies from mechanical contact. It has to be found among other defects on the same wafer.</p>
 <div class="card">
-<p class="ctitle">Scratch: hold the handling path</p>
-<p class="ctext">A robot, carrier or polishing step is damaging wafers. It repeats until fixed.</p>
+<p class="ctitle">Scratch: hold the handler, screen the wafer</p>
+<p class="ctext">The handler will scratch the next wafers too, and dies beside a scratch can fail later in the field.</p>
 </div>
 <div class="card">
 <p class="ctitle">No scratch: normal review</p>
 <p class="ctext">The wafer may carry other patterns, but not this one.</p>
 </div>
 </div>
-<img src="/_blob/27b46be8b6fb3540d5e06a350063decf" alt="Two wafer maps. Left, a wafer labelled with a scratch alone. Right, a wafer labelled Center, Edge-Loc and Scratch, with a large cluster in the centre. In neither is the scratch easy to see by eye." style="width:780px;height:409px;object-fit:contain">
+<img src="/_blob/e8305a0ff8ab3a7f6c7772c72249c3a1" alt="Two wafer maps. Left, a wafer labelled with a scratch alone: failing dies scattered across the wafer with a faint thin line. Right, a wafer labelled Center, Edge-Loc and Scratch, with a large cluster in the centre and a thin line below it." style="width:780px;height:409px;object-fit:contain">
 </div>
 <div class="row">
 <div class="card plain small">
 <p class="ctitle">Data</p>
-<p class="ctext">MixedWM38: 36,991 wafer maps, each labelled with every pattern it has. 49% have a scratch (balanced by the authors, partly with generated maps).</p>
+<p class="ctext">MixedWM38 (Kaggle usability 7.5): 36,991 wafer maps, each labelled with every pattern it has. 49% have a scratch, a rate the authors balanced, partly with generated maps.</p>
 </div>
 <div class="card plain small">
-<p class="ctitle">Cleaning we had to do</p>
-<p class="ctext">Dropped 1,024 duplicate maps (97.7% scratch). Deleted the die-count feature: it gave the label away.</p>
+<p class="ctitle">Evaluation loss</p>
+<p class="ctext">(10 × missed scratch + 1 × false alarm) / wafers. A miss repeats and carries a reliability risk. The 10:1 ratio is our assumption.</p>
 </div>
 <div class="card plain small">
-<p class="ctitle">Everything else is the same</p>
-<p class="ctext">Same features, models, search grids and split sizes. Same loss: (5 × missed + 1 × false alarm) / wafers.</p>
+<p class="ctitle">Cleaning, before any model</p>
+<p class="ctext">Dropped 1,024 duplicate maps (97.7% scratched). Withheld the die count: it has no physical link to a scratch, yet could rule scratches out.</p>
 </div>
 </div>
 <p class="foot">Orange = failing die, light blue = passing die. Source: MixedWM38 (Kaggle, co1d7era/mixedtype-wafer-defect-datasets).</p>
-<aside>This is the second run. We repeat the whole pipeline of the first project on a different semiconductor dataset, to see whether the same method reaches the same decision. The question: does this wafer have a scratch? A scratch is a thin line of failing dies from mechanical contact. In this dataset one wafer can carry several patterns at once, so the scratch has to be found among other defects; even by eye it is hard to see in these two examples. Data: MixedWM38, 36,991 wafer maps after cleaning. Two cleaning steps were needed before the task was honest: we dropped 1,024 exact duplicate maps, 97.7 percent of which were scratch wafers, and we deleted the die-count feature, because in this dataset it gives the label away. The 49 percent scratch rate is artificial: the authors balanced the classes, partly with generated maps. Everything else is identical to the first run: the features, the four models, the search grids, the 60/20/20 split, and the 5 to 1 evaluation loss.</aside>
+<aside>The question: does this wafer have a scratch? A scratch is a thin, often curved line of failing dies from mechanical contact: a handling robot, a carrier or a polishing step. Two things make it worth catching. It repeats until the handler is fixed, and dies next to a scratch can pass test and still fail early in the field. So a flag does two things: it holds the handling path, and it sends the wafer to neighbour-die screening. In this dataset a wafer can carry several patterns at once, so the scratch has to be found among other defects, as in the right-hand map. Data: MixedWM38, 36,991 wafer maps after cleaning, Kaggle usability 7.5. The 49 percent scratch rate is artificial: the authors balanced the classes, partly with generated maps. The evaluation loss: a miss costs 10 times a false alarm, because a miss carries a repeating cost and a reliability cost while a false alarm is one inspection. That ratio is our assumption and we vary it later. Before any modelling we removed two things: 1,024 exact duplicate maps, almost all scratched, and the die count, which has no physical link to a scratch but takes values on 5 percent of clean wafers that no scratched wafer has.</aside>
 </section>

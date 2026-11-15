@@ -1,4 +1,4 @@
-# Slide outline, run 2: scratch detection (6 slides)
+# Slide outline, project B: scratch detection (6 slides)
 
 Every number below comes from `project/Project2_Classification_Scratch.ipynb`.
 
@@ -7,42 +7,40 @@ Every number below comes from `project/Project2_Classification_Scratch.ipynb`.
 - **Deck source:** `deck_scratch/` holds the six slides as published.
 - **Slide figures:** `figures_scratch/`, drawn by `make_slide_figures.py scratch` from the notebook's own numbers.
 
-The run 1 outline is in `SLIDES.md`. The brief allows at most 6 slides in total, so the two decks can't both be presented in full.
-
 ## Slide 1: Is there a scratch on this wafer?
-- **Decision:** a scratch is a thin line of failing dies from mechanical contact. If the model says "scratch", the handling path is held.
-- **Data:** MixedWM38, 36,991 wafer maps, each labelled with every pattern it has. 49% have a scratch (balanced by the authors, partly with generated maps).
-- **Cleaning:** 1,024 duplicate maps dropped (97.7% scratch); the die-count feature deleted because it gave the label away.
-- **Everything else is the same as run 1:** features, models, search grids, split sizes, and the 5:1 evaluation loss.
+- **Decision:** a scratch comes from mechanical contact, repeats until the handler is fixed, and puts neighbouring dies at risk. A flag holds the handler and sends the wafer to neighbour-die screening.
+- **Data:** MixedWM38 (Kaggle usability 7.5), 36,991 wafer maps, each labelled with every pattern it has. 49% have a scratch, a rate the authors balanced, partly with generated maps.
+- **Evaluation loss:** (10 × missed scratch + 1 × false alarm) / wafers. The 10:1 ratio is our assumption.
+- **Cleaning:** 1,024 duplicate maps dropped (97.7% scratched); the die count withheld.
 - Figure: `s1_wafers.png`.
 
-## Slide 2: The same four models, a very different picture
-- Validation AUC: glassbox L2 0.597, glassbox log loss 0.654, blackbox L2 0.879, blackbox log loss 0.881.
-- The glassbox can't see a thin line: the blackbox is +0.227 ahead (95% CI +0.215 to +0.241).
-- Log loss beats L2 for the glassbox (+0.057) and ties for the blackbox (+0.002, interval includes zero).
-- The split is random, because the dataset has no lot information.
+## Slide 2: Features built for a line, then four models
+- 16 features: 9 background, 7 line. The line features are the seven strongest single features (AUC 0.63–0.73). None says where the line is.
+- Validation AUC: glassbox L2 0.885, glassbox log loss 0.909, blackbox L2 0.958, blackbox log loss 0.963.
+- Log loss beats L2 for both (+0.024 and +0.005; both intervals exclude zero). L2 scores fall outside 0–1 for 10–24% of wafers.
+- 60 / 20 / 20 stratified split; 32 configurations, tuned inside the training split.
 - Figure: `s2_auc.png`.
 
-## Slide 3: This time the blackbox wins, at threshold 0.175
-- Same rule as run 1: the blackbox must cut the cost by 10%. Here it cuts it by 36% (0.328 vs 0.512).
-- The glassbox's best cost equals holding the tool for every wafer (0.513).
-- Threshold 0.175, not 0.5: cost −45% (0.595 → 0.328); accuracy 79.1% → 70.9%.
-- Misses 68 instead of 714; false alarms 2,088 instead of 835.
+## Slide 3: We chose the blackbox, at threshold 0.117
+- The blackbox's AUC is 0.054 higher (95% CI +0.049 to +0.060) and its evaluation loss 38% lower (0.250 vs 0.406). The rule, set in advance, asked for 10%.
+- Threshold 0.117, not 0.5: cost −59% (0.613 → 0.250); accuracy 89.1% → 81.2%.
+- Misses 51 instead of 414; false alarms 1,339 instead of 395.
+- The choice holds for every cost ratio from 1 to 20.
 - Figure: `s3_threshold.png`.
 
-## Slide 4: Calibration: already good, and the threshold shows it
-- Calibration error 0.013 before, 0.009 after Platt scaling fitted on out-of-fold training scores. AUC unchanged.
-- Threshold on calibrated probabilities 0.155, against the theoretical 0.167. In run 1 it was 0.22.
+## Slide 4: Calibration: close already, slightly better after
+- Calibration error 0.011 before, 0.009 after Platt scaling fitted on out-of-fold training scores. AUC unchanged.
+- The L2 versions are the worst calibrated: 0.077 (glassbox) and 0.035 (blackbox).
+- Threshold on calibrated probabilities 0.105, against the theoretical 0.091, at almost the same cost.
 - Figure: `s4_calibration.png`.
 
-## Slide 5: Tree SHAP: the model does not look at the scratch
-- **Global:** `edge_fail_rate` (1.2) and `outer_ring_fail_rate` (1.0) lead. No feature describes a line.
-- **Local:** the most confident scratch (Donut + Edge-Ring + Loc + Scratch, P = 1.000) shows no visible line. The costliest mistake is an Edge-Loc + Scratch wafer scored 0.013.
-- Likely cause: the model has learned which mixes of patterns come with the Scratch label in this dataset.
+## Slide 5: Tree SHAP: does the model look at the scratch?
+- **Global:** `outer_ring_fail_rate` (1.9, background) leads, then `thin_fail_rate` (1.4) and `line_score_top20` (1.2). Line features carry 49% of the attribution.
+- **Local:** the most confident scratch is a scratch-only wafer with a visible diagonal line. The costliest mistake is a Donut + Edge-Loc + Loc + Scratch wafer where large blobs hide the line (P = 0.003).
+- **Caution:** part of the background attribution may be which patterns come with a Scratch label in this dataset.
 - Figures: `s5_shap_global.png`, `s5_shap_local_correct.png`, `s5_shap_local_mistake.png`.
 
-## Slide 6: Two runs, one pipeline, opposite decisions
-- Side-by-side table of run 1 and run 2: data, validation AUC, loss, model chosen, threshold, calibration, test AUC, test loss, whether SHAP matches the physics.
-- Run 2 test, used once: AUC 0.882 (95% CI 0.874 to 0.889); loss 0.330 per wafer, 36% below holding every wafer (0.513).
-- **What the comparison shows:** the same rule picks the glassbox when a linear model captures the signal, and the blackbox when it can't. Log loss never loses to L2.
-- **Which to trust:** run 1. Run 2's model reads how the dataset was built, and its 49% scratch rate is artificial.
+## Slide 6: Test result, used once, and what to flag
+- AUC 0.961 (95% CI 0.957 to 0.964); loss 0.263 per wafer (0.242 to 0.286), 49% below flagging every wafer (0.513); recall 98.4%, precision 72.3%.
+- **Audit:** the glassbox scores 0.426 on test (+0.162, CI +0.134 to +0.191). Validation and test agree: 0.250 vs 0.263.
+- **Limits:** artificial 49% scratch rate; assumed 10:1 ratio; half the attribution is background; random split. An earlier version with other features was scored on this test split once.

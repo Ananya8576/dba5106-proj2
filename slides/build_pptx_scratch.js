@@ -1,4 +1,4 @@
-// Builds slides/Project2_Scratch_Detection.pptx: the six slides of the second run (MixedWM38, Scratch vs not).
+// Builds slides/Project2_Scratch_Detection.pptx: the six slides of project B (MixedWM38, scratch detection).
 // Speaker notes are read from slides/deck_scratch/slides/*.html, figures from slides/figures_scratch/.
 // Usage: PPTX_SKILL_DIR=<pptx skill folder> node slides/build_pptx_scratch.js
 // (needs the pptxgenjs package; the skill folder supplies apply_theme.js, which writes the theme colours into the file)
@@ -62,85 +62,79 @@ const img = (s, name, alt, x, y, w, h) => s.addImage({ path: fig(name), x, y, w,
 // 1. The problem
 pres.addSection({ title: "Problem and data" });
 let s = add("LIGHT", "Problem and data", "problem", "Is there a scratch on this wafer?",
-  "DBA5106 Project 2, second run, same pipeline. Orange = failing die, light blue = passing die. Source: MixedWM38 (Kaggle, co1d7era/mixedtype-wafer-defect-datasets).");
-text(s, "A scratch is a thin line of failing dies from mechanical contact. Here it must be found among other defects.", { x: M, y: 1.6, w: 5.9, h: 0.8, fontSize: 16, color: C.text1 });
-card(s, M, 2.5, 5.9, 1.05, "Scratch: hold the handling path", "A robot, carrier or polishing step is damaging wafers. It repeats until fixed.");
-card(s, M, 3.7, 5.9, 1.05, "No scratch: normal review", "The wafer may carry other patterns, but not this one.");
-img(s, "s1_wafers.png", "Two wafer maps. Left, a wafer labelled with a scratch alone. Right, a wafer labelled Center, Edge-Loc and Scratch. In neither is the scratch easy to see by eye.", 6.9, 1.6, 5.8, 3.04);
-card(s, M, 4.95, 3.9, 1.7, "Data", "MixedWM38: 36,991 wafer maps, each labelled with every pattern it has. 49% have a scratch (balanced by the authors, partly with generated maps).");
-card(s, 4.72, 4.95, 3.9, 1.7, "Cleaning we had to do", "Dropped 1,024 duplicate maps (97.7% scratch). Deleted the die-count feature: it gave the label away.");
-card(s, 8.83, 4.95, 3.9, 1.7, "Everything else is the same", "Same features, models, search grids and split sizes. Same loss: (5 × missed + 1 × false alarm) / wafers.");
+  "DBA5106 Project 2, Version 2 (with data). Orange = failing die, light blue = passing die. Source: MixedWM38 (Kaggle, co1d7era/mixedtype-wafer-defect-datasets).");
+text(s, "A scratch is a thin line of failing dies from mechanical contact. It has to be found among other defects.", { x: M, y: 1.6, w: 5.9, h: 0.8, fontSize: 16, color: C.text1 });
+card(s, M, 2.5, 5.9, 1.1, "Scratch: hold the handler, screen the wafer", "The handler will scratch the next wafers too, and dies beside a scratch can fail later in the field.");
+card(s, M, 3.75, 5.9, 1.0, "No scratch: normal review", "The wafer may carry other patterns, but not this one.");
+img(s, "s1_wafers.png", "Two wafer maps. Left, a wafer labelled with a scratch alone. Right, a wafer labelled Center, Edge-Loc and Scratch, with a large cluster in the centre and a thin line below it.", 6.9, 1.6, 5.8, 3.04);
+card(s, M, 4.95, 3.9, 1.75, "Data", "MixedWM38 (Kaggle usability 7.5): 36,991 wafer maps, each labelled with every pattern it has. 49% have a scratch, a rate the authors balanced.");
+card(s, 4.72, 4.95, 3.9, 1.75, "Evaluation loss", "(10 × missed scratch + 1 × false alarm) / wafers. A miss repeats and carries a reliability risk. The 10:1 ratio is our assumption.");
+card(s, 8.83, 4.95, 3.9, 1.75, "Cleaning, before any model", "Dropped 1,024 duplicate maps (97.7% scratched). Withheld the die count: no physical link to a scratch, yet it could rule scratches out.");
 
-// 2. Four models
+// 2. Features and models
 pres.addSection({ title: "Models and decision" });
-s = add("LIGHT", "Models and decision", "models", "The same four models, a very different picture",
-  "Solid = log loss, dashed = L2. Intervals resample wafers, 2,000 times. Validation: 7,398 wafers. Training AUC of the blackbox: 0.930.");
+s = add("LIGHT", "Models and decision", "models", "Features built for a line, then four models",
+  "Solid = log loss, dashed = L2. Intervals resample wafers, 2,000 times. Validation: 7,398 wafers. Training AUC of the blackbox: 0.989.");
+card(s, M, 1.6, 6.0, 1.55, "16 features: 9 background, 7 line", "Line features measure thin structures and failing dies that line up in one direction. Alone, they are the seven strongest features (AUC 0.63–0.73). None says where the line is.");
 const cell = (t, o = {}) => ({ text: t, options: Object.assign({ fontSize: 14, color: C.text1, valign: "middle" }, o) });
 s.addTable([
   [cell("Validation AUC", { bold: true, fill: { color: C.background2 } }), cell("L2 loss", { bold: true, align: "right", fill: { color: C.background2 } }), cell("Log loss", { bold: true, align: "right", fill: { color: C.background2 } })],
-  [cell("Glassbox: L1 linear model"), cell("0.597", { align: "right" }), cell("0.654", { align: "right", bold: true })],
-  [cell("Blackbox: boosted trees"), cell("0.879", { align: "right" }), cell("0.881", { align: "right", bold: true })],
-], { x: M, y: 1.6, w: 6.0, colW: [3.2, 1.4, 1.4], rowH: 0.48, border: { type: "solid", pt: 0.75, color: "E1E0D9" }, objectName: "AUC table" });
-card(s, M, 3.3, 6.0, 1.4, "The glassbox can’t see a thin line", "Zone fail rates don’t describe a scratch, and a linear model can’t combine them. The trees can: +0.227 AUC (95% CI +0.215 to +0.241).");
-card(s, M, 4.9, 6.0, 1.4, "Log loss beats L2, or ties", "+0.057 for the glassbox. For the blackbox +0.002, with an interval that includes zero: a tie, so we keep log loss for its probabilities.");
-img(s, "s2_auc.png", "Validation AUC with 95% intervals: glassbox L2 0.597, glassbox log loss 0.654, blackbox L2 0.879, blackbox log loss 0.881.", 7.0, 1.6, 5.7, 2.85);
-text(s, [{ text: "Same setup as the first run: ", options: { bold: true, color: C.text1 } }, { text: "60 / 20 / 20 split, each model tuned separately by cross-validation inside the training split, 24 configurations. The split is random here, because this dataset has no lot information." }], { x: 7.0, y: 4.7, w: 5.7, h: 1.5 });
+  [cell("Glassbox: L1 linear model"), cell("0.885", { align: "right" }), cell("0.909", { align: "right", bold: true })],
+  [cell("Blackbox: boosted trees"), cell("0.958", { align: "right" }), cell("0.963", { align: "right", bold: true })],
+], { x: M, y: 3.3, w: 6.0, colW: [3.2, 1.4, 1.4], rowH: 0.48, border: { type: "solid", pt: 0.75, color: "E1E0D9" }, objectName: "AUC table" });
+card(s, M, 4.95, 6.0, 1.35, "Log loss beats L2 for both", "+0.024 for the glassbox, +0.005 for the blackbox; both intervals exclude zero. L2 scores fall outside 0–1 for 10–24% of wafers.");
+img(s, "s2_auc.png", "Validation AUC with 95% intervals: glassbox L2 0.885, glassbox log loss 0.909, blackbox L2 0.958, blackbox log loss 0.963.", 7.0, 1.6, 5.7, 2.85);
+text(s, [{ text: "How we kept it fair: ", options: { bold: true, color: C.text1 } }, { text: "60 / 20 / 20 stratified split. Each model tuned separately by cross-validation inside the training split, 32 configurations in total. Validation only compares the four tuned models." }], { x: 7.0, y: 4.7, w: 5.7, h: 1.5 });
 
 // 3. Decision and threshold
-s = add("LIGHT", "Models and decision", "decision", "This time the blackbox wins, at threshold 0.175",
-  "Validation split. Minimising plain misclassification would leave the threshold at 0.49. The choice holds for every cost ratio from 1 to 10.");
-card(s, M, 1.6, 6.0, 1.5, "Same rule, opposite answer", "The blackbox must cut the cost by 10% to earn its opacity. Here it cuts it by 36%: 0.328 per wafer against 0.512.");
-card(s, M, 3.25, 6.0, 1.1, "The glassbox adds nothing", "Its best cost, 0.512, is the cost of holding the tool for every wafer (0.513).");
-stat(s, M, 4.55, 2.9, 1.7, "−45%", "cost vs a 0.5 threshold (0.595 → 0.328)", { num: C.accent3 });
-stat(s, 3.7, 4.55, 2.9, 1.7, "−8.2 pts", "accuracy (79.1% → 70.9%)");
-img(s, "s3_threshold.png", "Cost per wafer against the decision threshold for the blackbox. Our evaluation loss is lowest at 0.175. The misclassification rate is lowest near 0.49.", 7.0, 1.6, 5.7, 3.29);
-text(s, "At 0.175 we miss 68 scratched wafers instead of 714, for 2,088 false alarms instead of 835.", { x: 7.0, y: 5.1, w: 5.7, h: 0.9 });
+s = add("LIGHT", "Models and decision", "decision", "We chose the blackbox, at threshold 0.117",
+  "Validation split. Minimising plain misclassification would leave the threshold at 0.48. The model choice holds for every cost ratio from 1 to 20.");
+card(s, M, 1.6, 6.0, 1.4, "The blackbox earns its opacity", "AUC is 0.054 higher (95% CI +0.049 to +0.060), and the evaluation loss is 38% lower: 0.250 per wafer against 0.406.");
+card(s, M, 3.15, 6.0, 1.25, "Rule set before looking", "An engineer acts on a flag, so a readable model has value. The blackbox had to cut the cost by 10% to be chosen.");
+stat(s, M, 4.55, 2.9, 1.7, "−59%", "cost vs a 0.5 threshold (0.613 → 0.250)", { num: C.accent3 });
+stat(s, 3.7, 4.55, 2.9, 1.7, "−7.9 pts", "accuracy (89.1% → 81.2%)");
+img(s, "s3_threshold.png", "Cost per wafer against the decision threshold for the blackbox. Our evaluation loss is lowest at 0.117. The misclassification rate is lowest near 0.48.", 7.0, 1.6, 5.7, 3.29);
+text(s, "At 0.117 we miss 51 scratched wafers instead of 414, for 1,339 false alarms instead of 395.", { x: 7.0, y: 5.1, w: 5.7, h: 0.9 });
 
 // 4. Calibration
 pres.addSection({ title: "Calibration and interpretability" });
-s = add("LIGHT", "Calibration and interpretability", "calibration", "Calibration: already good, and the threshold shows it",
-  "Validation split, equal-count bins. For cost ratios 1 to 4 the searched threshold is within 0.02 of the formula.");
-img(s, "s4_calibration.png", "Reliability diagram for the blackbox. All three curves, L2 loss, log loss raw and log loss after Platt scaling, lie close to the diagonal.", M, 1.6, 6.6, 4.11);
-stat(s, 7.5, 1.6, 5.23, 1.2, "0.013 → 0.009", "calibration error (ECE) of the chosen model; AUC unchanged", { size: 28 });
-card(s, 7.5, 2.95, 5.23, 0.95, "What we found", "Boosted trees trained with log loss on 22,195 wafers were close to calibrated from the start.");
-card(s, 7.5, 4.02, 5.23, 1.2, "The fix", "Platt scaling, fitted on out-of-fold training scores. A small gain. In the first run isotonic regression was the better fix.");
-card(s, 7.5, 5.34, 5.23, 1.3, "Why it matters", "Theory gives the threshold: 1/(1+5) = 0.167. Ours is 0.155. In the first run, with worse calibration, it was 0.22.");
+s = add("LIGHT", "Calibration and interpretability", "calibration", "Calibration: close already, slightly better after",
+  "Validation split, equal-count bins. For cost ratios from 1 to 20 the searched threshold stays within 0.03 of the formula.");
+img(s, "s4_calibration.png", "Reliability diagram for the blackbox. The log-loss model, raw and after Platt scaling, lies on the diagonal. The L2 version bends away from it.", M, 1.6, 6.6, 4.11);
+stat(s, 7.5, 1.6, 5.23, 1.2, "0.011 → 0.009", "calibration error (ECE) of the chosen model; AUC unchanged", { size: 28 });
+card(s, 7.5, 2.95, 5.23, 1.25, "How we checked", "Reliability diagram, ECE and Brier score for all four models. The L2 versions are the worst: 0.077 (glassbox) and 0.035 (blackbox).");
+card(s, 7.5, 4.3, 5.23, 0.95, "The fix", "Platt scaling, fitted on out-of-fold training scores so the validation split stays clean.");
+card(s, 7.5, 5.35, 5.23, 1.3, "Why it matters", "Theory gives the threshold for calibrated probabilities: 1/(1+10) = 0.091. Ours is 0.105, at almost the same cost (0.250 vs 0.260).");
 
 // 5. SHAP
-s = add("LIGHT", "Calibration and interpretability", "shap", "Tree SHAP: the model does not look at the scratch",
-  "Likely cause: the model has learned which mixes of patterns come with the Scratch label in this dataset. Orange pushes towards scratch, blue away.");
-text(s, "Global: what the model relies on", { x: M, y: 1.5, w: 5.3, h: 0.4, fontSize: 16, bold: true, color: C.text1 });
-img(s, "s5_shap_global.png", "Mean absolute SHAP value per feature. edge_fail_rate is first at 1.2, then outer_ring_fail_rate at 1.0, n_fail_clusters at 0.7 and largest_cluster_radius at 0.7.", M, 1.95, 5.3, 3.9);
-text(s, "Edge fail rates lead. No feature describes a line.", { x: M, y: 5.95, w: 5.3, h: 0.6 });
+s = add("LIGHT", "Calibration and interpretability", "shap", "Tree SHAP: does the model look at the scratch?",
+  "Caution: the top feature is background. Part of that is real context; part may be which patterns come with a Scratch label in this dataset.");
+text(s, "Global: about half line, half background", { x: M, y: 1.5, w: 5.3, h: 0.4, fontSize: 16, bold: true, color: C.text1 });
+img(s, "s5_shap_global.png", "Mean absolute SHAP value per feature. outer_ring_fail_rate, a background feature, is first at 1.9. Then three line features: thin_fail_rate 1.4, line_score_top20 1.2 and n_line_segments 0.7.", M, 1.95, 5.0, 4.08);
+text(s, "Line features carry 49% of the attribution.", { x: M, y: 6.1, w: 5.3, h: 0.5 });
 text(s, "Local: two wafers, next to their maps", { x: 6.5, y: 1.5, w: 6.2, h: 0.4, fontSize: 16, bold: true, color: C.text1 });
-text(s, [{ text: "Most confident scratch. ", options: { bold: true, color: C.text1 } }, { text: "P = 1.000. Label: Donut + Edge-Ring + Loc + Scratch. No line is visible; the edge fail rates decide." }], { x: 6.5, y: 1.95, w: 6.2, h: 0.55 });
-img(s, "s5_shap_local_correct.png", "Wafer map with a donut and an edge ring and no visible line, beside its SHAP values. outer_ring_fail_rate and edge_fail_rate push towards scratch.", 6.5, 2.55, 5.5, 1.65);
-text(s, [{ text: "Costliest mistake. ", options: { bold: true, color: C.text1 } }, { text: "Label: Edge-Loc + Scratch, P = 0.013. A cluster at the very edge pushes it to “no scratch”." }], { x: 6.5, y: 4.3, w: 6.2, h: 0.55 });
-img(s, "s5_shap_local_mistake.png", "Wafer map with scattered failures, beside its SHAP values. largest_cluster_radius = 0.94 pushes strongly towards no scratch.", 6.5, 4.9, 5.5, 1.65);
+text(s, [{ text: "Most confident scratch. ", options: { bold: true, color: C.text1 } }, { text: "P = 1.000. A scratch-only wafer with a visible diagonal line. Three of its top four drivers are line features." }], { x: 6.5, y: 1.95, w: 6.2, h: 0.55 });
+img(s, "s5_shap_local_correct.png", "Wafer map with a visible diagonal line of failing dies, beside its four largest SHAP values, all pushing towards scratch.", 6.5, 2.55, 5.5, 1.65);
+text(s, [{ text: "Costliest mistake. ", options: { bold: true, color: C.text1 } }, { text: "Label: Donut + Edge-Loc + Loc + Scratch, P = 0.003. Large blobs hide the thin line." }], { x: 6.5, y: 4.3, w: 6.2, h: 0.55 });
+img(s, "s5_shap_local_mistake.png", "Wafer map mostly covered by a donut and edge defects, beside its SHAP values. A low thin_fail_rate pushes strongly towards no scratch.", 6.5, 4.9, 5.5, 1.65);
 
-// 6. Result and comparison
-pres.addSection({ title: "Result and comparison" });
-s = add("DARK", "Result and comparison", "result", "Two runs, one pipeline, opposite decisions",
-  "AUC and loss rows are validation, log-loss models, at each model’s best threshold. Test splits used once. Loss levels are not comparable across runs.");
-const dc = (t, o = {}) => ({ text: t, options: Object.assign({ fontSize: 14, color: C.background1, valign: "middle", fill: { color: C.accent4 } }, o) });
-const hd = (t) => dc(t, { bold: true, fill: { color: "2A3B63" } });
-s.addTable([
-  [hd(""), hd("Run 1: Edge-Loc"), hd("Run 2: Scratch")],
-  [dc("Data"), dc("Real fab maps, 8,782"), dc("Real + GAN maps, 36,991")],
-  [dc("AUC, glassbox / blackbox"), dc("0.966 / 0.972"), dc("0.654 / 0.881")],
-  [dc("Loss, glassbox / blackbox"), dc("0.143 / 0.149"), dc("0.512 / 0.328")],
-  [dc("Model chosen", { bold: true }), dc("Glassbox", { bold: true }), dc("Blackbox", { bold: true })],
-  [dc("Threshold; saving vs 0.5"), dc("0.28; −27%"), dc("0.175; −45%")],
-  [dc("Calibration error"), dc("0.031 → 0.021"), dc("0.013 → 0.009")],
-  [dc("Test AUC"), dc("0.958"), dc("0.882")],
-  [dc("Test loss (hold every wafer)"), dc("0.181 (0.409)"), dc("0.330 (0.513)")],
-  [dc("SHAP matches the physics?"), dc("Yes"), dc("No")],
-], { x: M, y: 1.6, w: 7.5, colW: [2.9, 2.2, 2.4], rowH: 0.44, border: { type: "solid", pt: 0.75, color: "14213D" }, objectName: "Comparison table" });
-const dark = { fill: C.accent4, num: C.background1, label: C.accent5, size: 28 };
-stat(s, 8.35, 1.6, 2.1, 1.5, "0.882", "run 2 test AUC (CI 0.874 to 0.889)", dark);
-stat(s, 10.63, 1.6, 2.1, 1.5, "−36%", "run 2 test cost vs holding every wafer", Object.assign({}, dark, { num: C.accent6 }));
-card(s, 8.35, 3.3, 4.38, 1.55, "What the comparison shows", "The same rule picks the glassbox when a linear model captures the signal, and the blackbox when it can’t. Log loss never loses to L2.", { fill: C.accent4, head: C.background1, body: C.accent5 });
-card(s, 8.35, 5.0, 4.38, 1.55, "Which to trust", "Run 1. Run 2 has the bigger gap, but its model reads how the dataset was built, and its 49% scratch rate is artificial.", { fill: C.accent4, head: C.background1, body: C.accent5 });
+// 6. Result
+pres.addSection({ title: "Result" });
+s = add("DARK", "Result", "result", "Test result, used once, and what to flag",
+  "Final model: boosted trees (log loss) + Platt scaling, threshold 0.105. Test split: 7,398 wafers. An earlier version with other features was scored on this split once.");
+const dark = { fill: C.accent4, num: C.background1, label: C.accent5 };
+stat(s, 0.6, 1.6, 2.9, 1.6, "0.961", "AUC (95% CI 0.957 to 0.964)", dark);
+stat(s, 3.68, 1.6, 2.9, 1.6, "0.263", "evaluation loss per wafer (CI 0.242 to 0.286)", dark);
+stat(s, 6.76, 1.6, 2.9, 1.6, "98.4%", "of scratched wafers caught; precision 72.3%", dark);
+stat(s, 9.84, 1.6, 2.9, 1.6, "−49%", "cost vs flagging every wafer (0.513)", Object.assign({}, dark, { num: C.accent6 }));
+const col = (x, head, body) => {
+  text(s, head, { x, y: 3.6, w: 3.9, h: 0.45, fontSize: 18, bold: true, color: C.background1 });
+  text(s, body, { x, y: 4.15, w: 3.9, h: 2.4, color: C.accent5, paraSpaceAfter: 6 });
+};
+const bullets = (items) => items.map((t, i) => ({ text: t, options: { bullet: true, breakLine: i < items.length - 1 } }));
+col(0.6, "Audit of our own choice", "On test, the glassbox we didn’t choose scores 0.426 against our 0.263. The difference (+0.162, 95% CI +0.134 to +0.191) confirms the choice. Validation and test agree: 0.250 vs 0.263.");
+col(4.72, "Limits", bullets(["The 49% scratch rate is artificial, so the cost is not a fab forecast.", "The 10:1 cost ratio is our assumption.", "Half of the model’s attribution is background.", "No lots in the data, so the split is random."]));
+col(8.83, "What we did differently", bullets(["Built line features for the question.", "Left out position and the die count on purpose.", "32 configurations; test used once; an interval on every comparison."]));
 
 (async () => {
   await pres.writeFile({ fileName: OUT });

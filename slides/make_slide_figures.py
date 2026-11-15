@@ -4,8 +4,8 @@ Runs the code cells of a project notebook, then draws from the resulting
 objects, so every slide figure uses the notebook's own numbers.
 
 Usage (from anywhere):
-    python slides/make_slide_figures.py            # main project (WM-811K, Edge-Loc vs Loc)
-    python slides/make_slide_figures.py scratch    # comparison run (MixedWM38, Scratch vs not)
+    python slides/make_slide_figures.py            # project A (WM-811K, Edge-Loc vs Loc)
+    python slides/make_slide_figures.py scratch    # project B (MixedWM38, Scratch vs not)
 """
 import json
 import os
@@ -23,7 +23,7 @@ CFG = {
     "main": dict(notebook="Project2_Classification.ipynb", out="figures", positive="Edge-Loc",
                  auc_xlim=(0.944, 0.986), cost_ylim=0.6, cost_xmax=0.9, loss_label=(0.60, 0.40), mis_label=(0.62, 0.035)),
     "scratch": dict(notebook="Project2_Classification_Scratch.ipynb", out="figures_scratch", positive="scratch",
-                    auc_xlim=(0.56, 0.96), cost_ylim=1.4, cost_xmax=0.9, loss_label=(0.52, 0.85), mis_label=(0.55, 0.10)),
+                    auc_xlim=(0.868, 0.976), cost_ylim=1.6, cost_xmax=0.9, loss_label=(0.44, 1.05), mis_label=(0.55, 0.02)),
 }[RUN]
 OUT = os.path.join(HERE, CFG["out"])
 os.makedirs(OUT, exist_ok=True)
@@ -90,7 +90,7 @@ ax.plot(ts, curve_mis, color=BLUE, label="misclassification rate")
 ax.axvline(T_STAR, color=INK2, lw=2, ls="--"); ax.text(T_STAR + 0.015, CFG["cost_ylim"] * 0.93, f"best: {T_STAR:.2f}" if RUN == "main" else f"best: {T_STAR:.3f}", color=INK2)
 ax.axvline(0.5, color=MUTED, lw=2, ls=":"); ax.text(0.515, CFG["cost_ylim"] * 0.93, "default: 0.5", color=MUTED)
 ax.set_ylim(0, CFG["cost_ylim"]); ax.set_xlim(0, CFG["cost_xmax"]); ax.set_xlabel(f"threshold on the {CHOSEN[0]} score"); ax.set_ylabel("cost per wafer")
-ax.text(*CFG["loss_label"], "our loss\n(miss = 5, false alarm = 1)", color=ORANGE, ha="right", fontweight="bold")
+ax.text(*CFG["loss_label"], f"our loss\n(miss = {g('C_FN'):g}, false alarm = 1)", color=ORANGE, ha="right", fontweight="bold")
 ax.text(*CFG["mis_label"], "misclassification rate", color=BLUE, fontweight="bold")
 save("s3_threshold.png", 900, 520)
 
@@ -109,9 +109,11 @@ save("s4_calibration.png", 900, 560)
 # 5a. Global SHAP
 glob = pd.Series(np.abs(sv).mean(0), index=FEATURES).sort_values()
 fig, ax = plt.subplots(constrained_layout=True)
-ax.barh(glob.index, glob.values, color=ORANGE, height=0.62); ax.grid(axis="y", visible=False)
+LINE = ns.get("LINE", [])
+ax.barh(glob.index, glob.values, color=[ORANGE if (f in LINE or not LINE) else MUTED for f in glob.index], height=0.62); ax.grid(axis="y", visible=False)
+if LINE: ax.tick_params(axis="y", labelsize=13); ax.text(0.98, 0.04, "orange = line feature\ngrey = background feature", transform=ax.transAxes, ha="right", fontsize=14, color=INK2)
 ax.set_xlabel("mean |SHAP| (log-odds)")
-save("s5_shap_global.png", 760, 560)
+save("s5_shap_global.png", 760, 560 if not LINE else 620)
 
 # 5b. Local SHAP: two wafers next to their maps
 base_value, logit = g("base_value"), g("logit")

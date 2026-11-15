@@ -1,28 +1,28 @@
 <section id="calibration" data-transition="fade">
-<h2>Calibration: already good, and the threshold shows it</h2>
+<h2>Calibration: close already, slightly better after</h2>
 <div class="cols">
-<img src="/_blob/2ba0e02467b20e10d3a91088168332d3" alt="Reliability diagram for the blackbox. All three curves, L2 loss, log loss raw and log loss after Platt scaling, lie close to the diagonal." style="width:860px;height:535px;object-fit:contain">
+<img src="/_blob/975776f3941489427621b55644221cfb" alt="Reliability diagram for the blackbox. The log-loss model, raw and after Platt scaling, lies on the diagonal. The L2 version bends away from it." style="width:860px;height:535px;object-fit:contain">
 <div class="col">
 <div class="row">
 <div class="stat">
-<p class="num">0.013 → 0.009</p>
+<p class="num">0.011 → 0.009</p>
 <p class="lbl">calibration error (ECE) of the chosen model; AUC unchanged</p>
 </div>
 </div>
 <div class="card">
-<p class="ctitle">What we found</p>
-<p class="ctext">Boosted trees trained with log loss on 22,195 wafers were close to calibrated from the start.</p>
+<p class="ctitle">How we checked</p>
+<p class="ctext">Reliability diagram, ECE and Brier score for all four models. The L2 versions are the worst: 0.077 (glassbox) and 0.035 (blackbox).</p>
 </div>
 <div class="card">
 <p class="ctitle">The fix</p>
-<p class="ctext">Platt scaling, fitted on out-of-fold training scores. A small gain. In the first run isotonic regression was the better fix.</p>
+<p class="ctext">Platt scaling, fitted on out-of-fold training scores so the validation split stays clean.</p>
 </div>
 <div class="card">
 <p class="ctitle">Why it matters</p>
-<p class="ctext">Theory gives the threshold for calibrated probabilities: 1/(1+5) = 0.167. Ours is 0.155. In the first run, with worse calibration, it was 0.22.</p>
+<p class="ctext">With calibrated probabilities, theory gives the threshold: 1/(1+10) = 0.091. Ours is 0.105, at almost the same cost (0.250 vs 0.260).</p>
 </div>
 </div>
 </div>
-<p class="foot">Validation split, equal-count bins. For cost ratios 1 to 4 the searched threshold is within 0.02 of the formula.</p>
-<aside>Same calibration check as in the first run: reliability diagram, expected calibration error and Brier score for all four models. Here the chosen model was already close to calibrated: an error of 0.013 before any fix. Platt scaling, fitted on out-of-fold training scores, takes it to 0.009 without changing AUC. In the first run the chosen model was a logistic regression with an error of 0.031, and isotonic regression was the better fix. The link to the threshold is clearer here. With calibrated probabilities, decision theory gives the threshold as 1 over 1 plus the cost ratio, 0.167. Our searched threshold on calibrated probabilities is 0.155. In the first run it was 0.22. So the better calibrated the model, the closer the searched threshold is to the formula. For cost ratios from 1 to 4, the searched threshold matches the formula to within 0.02.</aside>
+<p class="foot">Validation split, equal-count bins. For cost ratios from 1 to 20 the searched threshold stays within 0.03 of the formula.</p>
+<aside>We checked calibration with a reliability diagram, the expected calibration error and the Brier score, for all four models. The chosen model, boosted trees with log loss, was already close: an error of 0.011. The L2 versions are clearly worse, 0.077 for the glassbox and 0.035 for the blackbox, which is the second cost of training with L2 after the scores outside 0 to 1. The fix: Platt scaling fitted on out-of-fold training scores, so the validation split is not reused. It takes the error to 0.009 and leaves AUC unchanged. Why calibration matters for the decision: with calibrated probabilities, decision theory gives the threshold directly as 1 over 1 plus the cost ratio, which is 0.091 for our 10 to 1 ratio. Our searched threshold on calibrated probabilities is 0.105, and using the formula would cost almost the same. Across cost ratios from 1 to 20 the searched threshold stays within 0.03 of the formula, so if the costs change, the threshold can be updated by formula.</aside>
 </section>
