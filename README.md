@@ -213,6 +213,7 @@ Each deck has six slides with speaker notes and covers its own project only. The
 | `project/figures/`, `project/figures_scratch/` | Figures saved by each notebook |
 | `project/results_summary.json`, `project/results_summary_scratch.json` | Key results of each project |
 | `slides/` | Both PowerPoint files, their outlines, the published deck sources (`deck/`, `deck_scratch/`), slide-sized figures (`figures/`, `figures_scratch/`) and the scripts that build them |
+| `general_datasets/` | A separate screening of 16 general (non-semiconductor) classification datasets, with its own top 5 |
 | `EDA/Project2_Dataset_EDA.ipynb` | Dataset screening: 15 candidates, the same checks on each, and the ranking |
 | `EDA/output.csv` | Scorecard export from the first screening run (A–J only) |
 
