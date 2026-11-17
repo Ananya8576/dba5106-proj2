@@ -27,7 +27,7 @@ pip install kagglehub pandas numpy scikit-learn scipy shap
 cd general_datasets && jupyter nbconvert --to notebook --execute --inplace Project2_General_Dataset_Screening.ipynb
 ```
 
-**Data sanity scorecard** (from , section 6b; ✅ fine · ⚠️ manageable · ❌ needs real work; thresholds are in the notebook)
+**Data sanity scorecard** (from `Project2_General_Data_Sanity.ipynb`, section 6b; ✅ fine · ⚠️ manageable · ❌ needs real work; thresholds are in the notebook)
 
 | Check | Bank Customer Churn | Credit Card Default | Online Shoppers | Credit Risk | Bank Marketing |
 |---|---|---|---|---|---|
