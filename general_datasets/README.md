@@ -27,14 +27,25 @@ pip install kagglehub pandas numpy scikit-learn scipy shap
 cd general_datasets && jupyter nbconvert --to notebook --execute --inplace Project2_General_Dataset_Screening.ipynb
 ```
 
-**Data sanity, from the sanity notebook**
+**Data sanity scorecard** (from , section 6b; ✅ fine · ⚠️ manageable · ❌ needs real work; thresholds are in the notebook)
 
-| Dataset | Verdict | Main issue |
-|---|---|---|
-| Default of Credit Card Clients | Clean, real data | 46 conflicting-label rows; undocumented codes to merge |
-| Credit Risk | Mostly clean | `loan_int_rate` 9.6% missing; 7 impossible rows |
-| Bank Customer Churn | Cleanest | Looks generated; course's own example |
-| Online Shoppers | Clean | `PageValues` may leak the purchase |
-| Bank Marketing | Most work | Time-ordered with strong drift (2.8% → 45.9%); 4.3% duplicates |
+| Check | Bank Customer Churn | Credit Card Default | Online Shoppers | Credit Risk | Bank Marketing |
+|---|---|---|---|---|---|
+| ❌ | 0 | 0 | 0 | 0 | 5 |
+| ⚠️ | 1 | 4 | 5 | 6 | 5 |
+| missing (table) | ✅ 0% | ✅ 0% | ✅ 0% | ⚠️ 1.1% | ⚠️ 1.5% |
+| worst column missing | ✅ 0.0% | ✅ 0.0% | ✅ 0.0% | ⚠️ 9.6% (loan_int_rate) | ❌ 20.9% (default) |
+| duplicate rows | ✅ 0.0% | ✅ 0.1% | ⚠️ 1.0% | ⚠️ 0.5% | ⚠️ 4.3% |
+| conflicting labels | ✅ 0 rows | ⚠️ 46 rows | ✅ 0 rows | ✅ 0 rows | ❌ 542 rows |
+| class balance | ✅ 20.4% | ✅ 22.1% | ✅ 15.5% | ✅ 21.8% | ✅ 11.3% |
+| validation positives | ✅ 407 | ✅ 1,327 | ✅ 382 | ✅ 1,422 | ✅ 928 |
+| impossible / inconsistent rows | ✅ 0 | ✅ 0 | ⚠️ 6 | ⚠️ 7 | ❌ 4,110 |
+| undocumented codes | ✅ 0 rows | ⚠️ 399 rows | ✅ 0 rows | ✅ 0 rows | ⚠️ 3 rows |
+| spiky columns | ✅ 0 | ⚠️ 9 | ⚠️ 6 | ⚠️ 2 | ⚠️ 3 |
+| correlated pairs | ✅ 0 | ⚠️ 6 | ⚠️ 1 | ✅ 0 | ⚠️ 3 |
+| leakage | ✅ strongest 0.73 | ✅ strongest 0.69 | ⚠️ PageValues is computed from later purchases | ⚠️ loan_grade / loan_int_rate are the lender's own risk ratings | ❌ duration is known only after the call |
+| time drift | ✅ no | ✅ no | ✅ no | ✅ no | ❌ yes |
+| looks generated | ⚠️ yes | ✅ no | ✅ no | ✅ no | ✅ no |
+
 
 **Still to check by hand:** the usability rating on each Kaggle page.
