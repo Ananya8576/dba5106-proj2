@@ -2,7 +2,7 @@
 
 **Project 2, Version 2 (with data)**: a classification project presented in at most 6 slides. The brief is in [`Project 2.pdf`](Project%202.pdf).
 
-This repository holds **two independent projects** on semiconductor wafer maps. Each was designed for its own question: its own features, cost ratio, search grids and decision. Neither notebook refers to the other. They are compared only in the last section of this page, after both were finished.
+This repository holds **two independent projects** on semiconductor wafer maps, plus a separate screening of general classification datasets (see "General classification datasets" below). Each was designed for its own question: its own features, cost ratio, search grids and decision. Neither notebook refers to the other. They are compared only in the last section of this page, after both were finished.
 
 | | Project A | Project B |
 |---|---|---|
@@ -193,6 +193,39 @@ The loss levels can't be compared directly: the cost ratios differ and project B
 - **Both chosen models were close to calibrated**, and in both the searched threshold landed near the theoretical one.
 - **The larger validation split in B left a smaller gap between validation and test.**
 - **A is the cleaner story to defend:** real data, no cleaning, and an explanation that matches the physics. **B has the stronger modelling result**, with caveats about generated data and background features.
+
+# General classification datasets (separate track)
+The wafer datasets raised concerns: severe imbalance in some, and features that don't describe the defect in others. So a separate track screens general Kaggle classification datasets in `general_datasets/`, independently of the two projects above.
+
+- `general_datasets/Project2_General_Dataset_Screening.ipynb`: 16 datasets, the same checks on each, ranked to a top 5.
+- `general_datasets/Project2_General_Data_Sanity.ipynb`: data sanity checks for the top 5 only, with no models.
+
+**Data sanity scorecard for the top 5** (✅ fine · ⚠️ manageable · ❌ needs real work; thresholds are in the sanity notebook, section 6b)
+
+| Check | Bank Customer Churn | Credit Card Default | Online Shoppers | Credit Risk | Bank Marketing |
+|---|---|---|---|---|---|
+| ❌ | 0 | 0 | 0 | 0 | 5 |
+| ⚠️ | 1 | 4 | 5 | 6 | 5 |
+| missing (table) | ✅ 0% | ✅ 0% | ✅ 0% | ⚠️ 1.1% | ⚠️ 1.5% |
+| worst column missing | ✅ 0.0% | ✅ 0.0% | ✅ 0.0% | ⚠️ 9.6% (loan_int_rate) | ❌ 20.9% (default) |
+| duplicate rows | ✅ 0.0% | ✅ 0.1% | ⚠️ 1.0% | ⚠️ 0.5% | ⚠️ 4.3% |
+| conflicting labels | ✅ 0 rows | ⚠️ 46 rows | ✅ 0 rows | ✅ 0 rows | ❌ 542 rows |
+| class balance | ✅ 20.4% | ✅ 22.1% | ✅ 15.5% | ✅ 21.8% | ✅ 11.3% |
+| validation positives | ✅ 407 | ✅ 1,327 | ✅ 382 | ✅ 1,422 | ✅ 928 |
+| impossible / inconsistent rows | ✅ 0 | ✅ 0 | ⚠️ 6 | ⚠️ 7 | ❌ 4,110 |
+| undocumented codes | ✅ 0 rows | ⚠️ 399 rows | ✅ 0 rows | ✅ 0 rows | ⚠️ 3 rows |
+| spiky columns | ✅ 0 | ⚠️ 9 | ⚠️ 6 | ⚠️ 2 | ⚠️ 3 |
+| correlated pairs | ✅ 0 | ⚠️ 6 | ⚠️ 1 | ✅ 0 | ⚠️ 3 |
+| leakage | ✅ strongest 0.73 | ✅ strongest 0.69 | ⚠️ PageValues is computed from later purchases | ⚠️ loan_grade / loan_int_rate are the lender's own risk ratings | ❌ duration is known only after the call |
+| time drift | ✅ no | ✅ no | ✅ no | ✅ no | ❌ yes |
+| looks generated | ⚠️ yes | ✅ no | ✅ no | ✅ no | ✅ no |
+
+**Reading it**
+- **Missing values:** only Credit Risk (interest rate, 9.6%) and Bank Marketing ("unknown" entries, worst in `default` at 20.9%) have any.
+- **Bank Marketing** has the most problems: a column known only after the call, rows in time order with strong drift, and 542 rows with conflicting labels.
+- **Bank Customer Churn** has the fewest marks, but looks generated and is the course's own example.
+- **Strongest candidates:** Default of Credit Card Clients (real data, light cleaning) and Credit Risk (clearest model gap in the screening).
+- **Still to check by hand:** the Kaggle usability rating of each.
 
 ## Slides
 | Project | PowerPoint | Outline | Online deck |
