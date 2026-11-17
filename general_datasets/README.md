@@ -16,6 +16,7 @@ AUCs are untuned 5-fold cross-validation on an 80% development split; the thresh
 
 **Files**
 - `Project2_General_Dataset_Screening.ipynb`: the screening, with outputs
+- `Project2_General_Data_Sanity.ipynb`: data sanity checks for the top 5 only (no models): generic checks plus validity rules written for each dataset, ending with what each needs before modelling
 - `screening_results.csv`: every number from the run, one row per dataset
 
 **How to run** (downloads about 30 MB from Kaggle; needs a Kaggle token in `~/.kaggle/kaggle.json`):
@@ -25,5 +26,15 @@ pip install kagglehub pandas numpy scikit-learn scipy shap
 ```bash
 cd general_datasets && jupyter nbconvert --to notebook --execute --inplace Project2_General_Dataset_Screening.ipynb
 ```
+
+**Data sanity, from the sanity notebook**
+
+| Dataset | Verdict | Main issue |
+|---|---|---|
+| Default of Credit Card Clients | Clean, real data | 46 conflicting-label rows; undocumented codes to merge |
+| Credit Risk | Mostly clean | `loan_int_rate` 9.6% missing; 7 impossible rows |
+| Bank Customer Churn | Cleanest | Looks generated; course's own example |
+| Online Shoppers | Clean | `PageValues` may leak the purchase |
+| Bank Marketing | Most work | Time-ordered with strong drift (2.8% → 45.9%); 4.3% duplicates |
 
 **Still to check by hand:** the usability rating on each Kaggle page.
