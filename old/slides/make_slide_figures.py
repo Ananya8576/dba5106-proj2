@@ -27,7 +27,7 @@ CFG = {
 }[RUN]
 OUT = os.path.join(HERE, CFG["out"])
 os.makedirs(OUT, exist_ok=True)
-os.chdir(os.path.join(HERE, "..", "project"))      # the notebook reads data/ relative to its own folder
+os.chdir(os.path.join(HERE, "..", "old", "project"))      # the notebook reads data/ relative to its own folder
 
 # Run the notebook's code with plotting and display switched off
 ns = {"display": lambda *a, **k: None}

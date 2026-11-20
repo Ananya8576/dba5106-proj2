@@ -1,6 +1,6 @@
 # Slide outline, project B: scratch detection (6 slides)
 
-Every number below comes from `project/Project2_Classification_Scratch.ipynb`.
+Every number below comes from `old/project/Project2_Classification_Scratch.ipynb`.
 
 - **Deck:** https://claude.ai/artifact/TVt1dE1fV5p8tuV6fe84WL (private until shared; download as PowerPoint or PDF from its Share menu).
 - **PowerPoint file:** `Project2_Scratch_Detection.pptx`, built by `build_pptx_scratch.js`. Same six slides and speaker notes as the deck.

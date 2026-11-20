@@ -1,5 +1,7 @@
 # General classification datasets: screening
 
+Faulty Steel Plates was selected from this screening. The screening used Bumps vs. other faults. The [final steel project](../final/steel-scratch-triage/README.md) uses the same dataset for scratch triage.
+
 `Project2_General_Dataset_Screening.ipynb` screens 17 Kaggle classification datasets outside the wafer domain against the Project 2 brief, with the same checks on each, and ends with a ranking. It is self-contained and doesn't depend on anything else in this repository.
 
 **Top 6 from the run**
@@ -25,7 +27,7 @@ AUCs are untuned 5-fold cross-validation on an 80% development split; the thresh
 pip install kagglehub pandas numpy scikit-learn scipy shap
 ```
 ```bash
-cd general_datasets && jupyter nbconvert --to notebook --execute --inplace Project2_General_Dataset_Screening.ipynb
+cd general && jupyter nbconvert --to notebook --execute --inplace Project2_General_Dataset_Screening.ipynb
 ```
 
 **Data sanity scorecard** (from `Project2_General_Data_Sanity.ipynb`, section 6b; ✅ fine · ⚠️ manageable · ❌ needs real work; thresholds are in the notebook)

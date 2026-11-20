@@ -1,14 +1,16 @@
-# DBA5106 Project 2: two wafer-defect classification projects
+# DBA5106 Project 2: steel scratch triage
 
 **Project 2, Version 2 (with data)**: a classification project presented in at most 6 slides. The brief is in [`Project 2.pdf`](Project%202.pdf).
 
-This repository holds **two independent projects** on semiconductor wafer maps, plus a separate screening of general classification datasets (see "General classification datasets" below). Each was designed for its own question: its own features, cost ratio, search grids and decision. Neither notebook refers to the other. They are compared only in the last section of this page, after both were finished.
+The [final project](final/steel-scratch-triage/README.md) uses Faulty Steel Plates to prioritize known faults for scratch review. Its dataset, notebook, results, and slides are in `final/steel-scratch-triage/`.
+
+The repository also holds **two earlier independent projects** on semiconductor wafer maps, plus a separate screening of general classification datasets (see "General classification datasets" below). Each was designed for its own question: its own features, cost ratio, search grids and decision. Neither notebook refers to the other. They are compared only in the last section of this page, after both were finished.
 
 | | Project A | Project B |
 |---|---|---|
 | Question | Is this wafer's defect cluster **Edge-Loc** (hold the tool) or **Loc** (one-off particle)? | Does this wafer have a **scratch** among its defects? |
 | Data | WM-811K, real fab wafer maps | MixedWM38, mixed-type wafer maps |
-| Notebook | `project/Project2_Classification.ipynb` | `project/Project2_Classification_Scratch.ipynb` |
+| Notebook | `old/project/Project2_Classification.ipynb` | `old/project/Project2_Classification_Scratch.ipynb` |
 | Slides | `slides/Project2_Wafer_Defect_Routing.pptx` | `slides/Project2_Scratch_Detection.pptx` |
 
 ## What the project has to show
@@ -34,7 +36,7 @@ Classification project
 | Positive class | Edge-Loc: 59.1% |
 | Features | 10 spatial features per map: die count, fail rate overall and in four zones, number of failing clusters, size and radius of the largest cluster, how one-sided the failures are |
 | Grouping | 5,008 lots |
-| Built by | `project/build_features.py` |
+| Built by | `old/project/build_features.py` |
 
 **Decision supported.** Edge-Loc points to a tool's edge process drifting, so the tool is held. Loc is a one-off particle. **Evaluation loss:** (5 × missed Edge-Loc + 1 × false alarm) / wafers. The 5:1 ratio is an assumption.
 
@@ -101,7 +103,7 @@ Classification project
 | Positive class | Label includes Scratch: 48.7% (balanced by the authors, not a fab's real rate) |
 | Features | 16: nine background features (fail rates by zone, clusters) and **seven line features** built for this question (thin structures, lined-up failing dies, straight-line evidence) |
 | Grouping | None in the dataset |
-| Built by | `project/build_features_mixedwm38.py` |
+| Built by | `old/project/build_features_mixedwm38.py` |
 
 **Decision supported.** A scratch comes from mechanical contact and repeats until the handler is fixed; dies next to it can pass test and fail later. A flag holds the handling path and sends the wafer to neighbour-die screening. **Evaluation loss:** (10 × missed scratch + 1 × false alarm) / wafers. A miss carries a repeating cost and a reliability cost. The 10:1 ratio is an assumption.
 
@@ -194,11 +196,13 @@ The loss levels can't be compared directly: the cost ratios differ and project B
 - **The larger validation split in B left a smaller gap between validation and test.**
 - **A is the cleaner story to defend:** real data, no cleaning, and an explanation that matches the physics. **B has the stronger modelling result**, with caveats about generated data and background features.
 
-# General classification datasets (separate track)
-The wafer datasets raised concerns: severe imbalance in some, and features that don't describe the defect in others. So a separate track screens general Kaggle classification datasets in `general_datasets/`, independently of the two projects above.
+# General dataset screening
 
-- `general_datasets/Project2_General_Dataset_Screening.ipynb`: 17 datasets, the same checks on each, ranked to a top 6.
-- `general_datasets/Project2_General_Data_Sanity.ipynb`: data sanity checks for the top 6 only, with no models.
+The screening in `general/` compared 17 Kaggle classification datasets. It evaluated Faulty Steel Plates as **Bumps vs. other faults**. The final steel project uses **scratch vs. other faults**.
+
+- `general/Project2_General_Dataset_Screening.ipynb` ranks the 17 datasets.
+- `general/Project2_General_Data_Sanity.ipynb` runs data sanity checks for the top six.
+- `general/screening_results.csv` contains the screening results.
 
 **Data sanity scorecard for the top 6** (✅ fine · ⚠️ manageable · ❌ needs real work; thresholds are in the sanity notebook, section 6b)
 
@@ -240,16 +244,17 @@ Each deck has six slides with speaker notes and covers its own project only. The
 | Path | What it is |
 |---|---|
 | `Project 2.pdf` | Project brief (lecture slides) |
-| `project/Project2_Classification.ipynb` | Project A, with outputs |
-| `project/Project2_Classification_Scratch.ipynb` | Project B, with outputs |
-| `project/build_features.py`, `project/build_features_mixedwm38.py` | Build each project's feature table and wafer maps from the Kaggle files |
-| `project/data/` | Feature tables and wafer maps for both projects, and project B's cleaning report |
-| `project/figures/`, `project/figures_scratch/` | Figures saved by each notebook |
-| `project/results_summary.json`, `project/results_summary_scratch.json` | Key results of each project |
+| `old/project/Project2_Classification.ipynb` | Project A, with outputs |
+| `old/project/Project2_Classification_Scratch.ipynb` | Project B, with outputs |
+| `old/project/build_features.py`, `old/project/build_features_mixedwm38.py` | Build each project's feature table and wafer maps from the Kaggle files |
+| `old/project/data/` | Feature tables and wafer maps for both projects, and project B's cleaning report |
+| `old/project/figures/`, `old/project/figures_scratch/` | Figures saved by each notebook |
+| `old/project/results_summary.json`, `old/project/results_summary_scratch.json` | Key results of each project |
 | `slides/` | Both PowerPoint files, their outlines, the published deck sources (`deck/`, `deck_scratch/`), slide-sized figures (`figures/`, `figures_scratch/`) and the scripts that build them |
-| `general_datasets/` | A separate screening of 16 general (non-semiconductor) classification datasets, with its own top 5 |
-| `EDA/Project2_Dataset_EDA.ipynb` | Dataset screening: 15 candidates, the same checks on each, and the ranking |
-| `EDA/output.csv` | Scorecard export from the first screening run (A–J only) |
+| `final/steel-scratch-triage/` | Final Faulty Steel Plates dataset, scratch-triage analysis, results, and slides |
+| `general/` | General dataset screening and sanity checks |
+| `old/EDA/Project2_Dataset_EDA.ipynb` | Dataset screening: 15 candidates, the same checks on each, and the ranking |
+| `old/EDA/output.csv` | Scorecard export from the first screening run (A–J only) |
 
 ## How to run
 ```bash
@@ -257,18 +262,18 @@ pip install pandas numpy scikit-learn scipy matplotlib shap
 ```
 Project A (about 2 minutes):
 ```bash
-cd project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification.ipynb
+cd old/project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification.ipynb
 ```
 Project B (about 5 minutes):
 ```bash
-cd project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification_Scratch.ipynb
+cd old/project && jupyter nbconvert --to notebook --execute --inplace Project2_Classification_Scratch.ipynb
 ```
-Both notebooks read `project/data/`, so they don't need Kaggle. To rebuild that data from the source files (needs `kagglehub`; project A needs several GB of RAM):
+Both notebooks read `old/project/data/`, so they don't need Kaggle. To rebuild that data from the source files (needs `kagglehub`; project A needs several GB of RAM):
 ```bash
-python project/build_features.py
+python old/project/build_features.py
 ```
 ```bash
-python project/build_features_mixedwm38.py
+python old/project/build_features_mixedwm38.py
 ```
 
 ## Next steps
@@ -277,7 +282,7 @@ python project/build_features_mixedwm38.py
 3. For project A, be ready for the usability question: the dataset scores 5.0 out of 10.
 
 ## Appendix: how the two datasets were chosen
-Both come from screening 15 candidates in `EDA/Project2_Dataset_EDA.ipynb`, which runs the same checks on each. The two semiconductor datasets that ranked first and second became the two runs. The screening used untuned models and random splits; the project notebooks tune the models and, where lots exist, split by lot.
+Both come from screening 15 candidates in `old/EDA/Project2_Dataset_EDA.ipynb`, which runs the same checks on each. The two semiconductor datasets that ranked first and second became the two runs. The screening used untuned models and random splits; the project notebooks tune the models and, where lots exist, split by lot.
 
 ### Datasets screened
 | # | Dataset | Source | Verdict from the run |

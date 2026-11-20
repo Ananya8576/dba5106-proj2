@@ -1,11 +1,11 @@
 # Slide outline (6 slides, 15 minutes)
 
-Every number below comes from `project/Project2_Classification.ipynb`.
+Every number below comes from `old/project/Project2_Classification.ipynb`.
 
 - **Deck:** https://claude.ai/artifact/S4n1WdZDCnKSmxF778twG2 (private until shared; download as PowerPoint or PDF from its Share menu).
 - **PowerPoint file:** `Project2_Wafer_Defect_Routing.pptx`, built by `build_pptx.js`. Same six slides and speaker notes as the deck.
 - **Deck source:** `deck/` holds the six slides as published.
-- **Slide figures:** `figures/`, drawn by `make_slide_figures.py` from the notebook's own numbers. The figure names below (`03_auc_intervals.png` and so on) are the notebook's versions in `project/figures/`.
+- **Slide figures:** `figures/`, drawn by `make_slide_figures.py` from the notebook's own numbers. The figure names below (`03_auc_intervals.png` and so on) are the notebook's versions in `old/project/figures/`.
 
 ## Slide 1: The decision, the data, the loss
 - **Decision:** a wafer shows a local cluster of failing dies. Is it **Edge-Loc** (a tool's edge process is drifting: hold the tool) or **Loc** (a one-off particle: normal review)?
