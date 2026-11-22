@@ -60,10 +60,24 @@ def load_data(path: Path):
     )
     if not np.isfinite(x.to_numpy()).all():
         raise ValueError('Non-finite feature values require inspection before modeling.')
+    invalid_brightness = ~x['Mean_Luminosity'].between(
+        x['Minimum_of_Luminosity'], x['Maximum_of_Luminosity'],
+    )
+    excluded_brightness_rows = [
+        {'row_id': int(i), 'subtype': subtype.loc[i], 'scratch': int(y.loc[i]),
+         'mean_brightness': float(x.at[i, 'Mean_Luminosity']),
+         'minimum_brightness': float(x.at[i, 'Minimum_of_Luminosity']),
+         'maximum_brightness': float(x.at[i, 'Maximum_of_Luminosity'])}
+        for i in x.index[invalid_brightness]
+    ]
+    source_rows = len(raw)
+    keep = ~invalid_brightness
+    raw, x, y, subtype = raw.loc[keep], x.loc[keep], y.loc[keep], subtype.loc[keep]
     duplicates = int(x.duplicated().sum())
     if duplicates:
         raise ValueError('Group duplicate feature vectors before splitting to avoid crossing splits.')
     audit = {
+        'source_rows': source_rows, 'excluded_brightness_rows': excluded_brightness_rows,
         'rows': len(raw), 'input_features': raw.shape[1] - len(LABELS),
         'features': x.shape[1], 'positive': int(y.sum()), 'negative': int(y.eq(0).sum()),
         'missing_cells': int(raw.isna().sum().sum()), 'duplicate_rows': int(raw.duplicated().sum()),
@@ -72,12 +86,20 @@ def load_data(path: Path):
     return x, y, subtype, audit
 
 
-def make_splits(y):
-    development, test = train_test_split(y.index, test_size=0.20, stratify=y, random_state=SEED)
-    train, validation = train_test_split(
-        development, test_size=0.25, stratify=y.loc[development], random_state=SEED + 1,
+def make_splits(y, excluded_brightness_rows=()):
+    # Keep the original split memberships for all retained source records.
+    excluded_labels = pd.Series(
+        {row['row_id']: row['scratch'] for row in excluded_brightness_rows}, dtype=y.dtype,
     )
-    return {'train': train, 'validation': validation, 'test': test}
+    source_labels = pd.concat([y, excluded_labels]).sort_index()
+    development, test = train_test_split(
+        source_labels.index, test_size=0.20, stratify=source_labels, random_state=SEED,
+    )
+    train, validation = train_test_split(
+        development, test_size=0.25, stratify=source_labels.loc[development], random_state=SEED + 1,
+    )
+    return {name: indices[indices.isin(y.index)]
+            for name, indices in (('train', train), ('validation', validation), ('test', test))}
 
 
 def candidate_models():
@@ -352,12 +374,14 @@ def analyze(data_path=ROOT / 'data' / 'faults.csv', output=ROOT / 'results', ver
     charts.mkdir(parents=True, exist_ok=True)
     style_charts()
     x, y, subtype, audit = load_data(Path(data_path))
-    splits = make_splits(y)
+    splits = make_splits(y, audit['excluded_brightness_rows'])
     train, validation, test = (splits[key] for key in ('train', 'validation', 'test'))
     split_counts = {key: {'rows': len(indices), 'positive': int(y.loc[indices].sum())}
                     for key, indices in splits.items()}
     if verbose:
-        print(f'Loaded {len(x)} records and {x.shape[1]} features. Tuning the four models…', flush=True)
+        print(f"Retained {len(x)} of {audit['source_rows']} records and {x.shape[1]} features. "
+              f"Excluded brightness rows: {[row['row_id'] for row in audit['excluded_brightness_rows']]}. "
+              "Tuning the four models…", flush=True)
     screen = feature_screen(x.loc[train], y.loc[train])
     screen.to_csv(output / 'training_single_feature_auc.csv', header=True)
     fitted, comparison = fit_candidates(x.loc[train], y.loc[train], x.loc[validation], y.loc[validation])
