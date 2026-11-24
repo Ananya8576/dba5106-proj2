@@ -10,7 +10,7 @@ Source: [Faulty Steel Plates, UCI Machine Learning on Kaggle](https://www.kaggle
 
 ## Open or rerun
 
-Extract the ZIP, then open **`Project2_Steel_Scratch_Triage.ipynb`** to read the completed analysis and figures. Run the notebook from the project folder so it can import `analysis.py`.
+Open [Project2_Steel_Scratch_Triage_TreeSHAP_Audit.ipynb](Project2_Steel_Scratch_Triage_TreeSHAP_Audit.ipynb) for the completed analysis, figures, and independent TreeSHAP check. Run the notebook from this folder so it can import `analysis.py`. To run all notebook cells, install `shap==0.51.0` and `ipykernel` alongside the pinned requirements.
 
 ```bash
 python -m pip install -r requirements.txt
@@ -19,6 +19,21 @@ python analysis.py
 
 Python 3.12 was used for the delivered run. Jupyter or VS Code's Jupyter extension can run the notebook using the same environment. The Python command regenerates `results/` from the included data. The small tuning grids take roughly one to two minutes on a CPU.
 
+## Workflow
+
+```mermaid
+flowchart TD
+    A["1. Check brightness and clean the data<br/>Exclude two inconsistent records and retain 1,939"]
+    B["2. Finalize the features<br/>20 predictors with fault labels excluded"]
+    C["3. Preserve the stratified split<br/>1,164 training / 387 validation / 388 test"]
+    D["4. Tune four model variants<br/>Five-fold cross-validation on training data only"]
+    E["5. Fit candidate Platt mappings<br/>Use out-of-fold training scores"]
+    F["6. Select the model and probability mapping<br/>Highest validation AUC; retain Platt based on validation Brier"]
+    G["7. Set the cutoff using 5:1 loss<br/>Search validation cutoffs, then lock the policy"]
+    H["8. Explain and evaluate the locked policy<br/>Validation TreeSHAP, then held-out testing, then the independent SHAP check"]
+    A --> B --> C --> D --> E --> F --> G --> H
+```
+
 ## What was fitted
 
 - **Data.** 1,939 retained defects, including 579 scratches (29.9%). The analysis excludes two K_Scatch records, source rows 518 and 591 (zero-based), because derived mean brightness is below the recorded minimum. Source IDs and exclusion details are recorded in the results summary. Zero missing cells, exact duplicate rows or duplicate predictor vectors after feature extraction. Use 20 geometry, image brightness and plate-property features. Exclude labels, absolute image coordinates, conveyor length and redundant representations. Derive width, height and mean brightness.
@@ -26,7 +41,7 @@ Python 3.12 was used for the delivered run. Jupyter or VS Code's Jupyter extensi
 - **Glass box.** LASSO on the 0/1 label and L1 logistic regression. The coefficient penalty is L1 in both. Their training losses are squared error (L2) and binomial log loss.
 - **Black box.** Gradient-boosted trees with squared error or binomial log loss, using the same grid for both. The selected configuration has depth 3, 240 trees, 15 minimum records per leaf and learning rate 0.05.
 - **Calibration and decision.** Fit a Platt mapping to out-of-fold training scores. Compare raw and calibrated Brier scores on validation and retain Platt for its slightly lower Brier score and positive slope. The validation ECE increases slightly. Search all distinct validation decisions to minimize the 5:1 loss. Lock the threshold before evaluating the test set.
-- **TreeSHAP.** Compute exact tree-path-dependent attributions by enumerating each shallow tree's feature coalitions and summing the resulting attributions. Global importance uses mean absolute attribution across validation. The local example is a missed `Z_Scratch` from validation. The contributions reconstruct the tree ensemble's raw margins to numerical precision.
+- **TreeSHAP.** Compute exact tree-path-dependent attributions by enumerating each shallow tree's feature coalitions and summing the resulting attributions. Global importance uses mean absolute attribution across validation. The local example is a missed `Z_Scratch` from validation. The contributions reconstruct the tree ensemble's raw margins. The independent notebook check compared the base value and all 7,740 feature contributions with the SHAP library on the 387 validation records. The largest attribution difference was 6.2 × 10⁻¹⁵.
 
 ## Result
 
@@ -53,10 +68,9 @@ Outside X index, plate thickness and Edges index lead the global attributions. K
 
 ## Files
 
-- `Project2_Steel_Scratch_Triage.ipynb` – executed walkthrough with model comparison, calibration, threshold, SHAP and test results
-- `Project2_Steel_Scratch_Triage_TreeSHAP_Audit.ipynb` – independent TreeSHAP check on the 387 retained validation rows. Run from this folder with `shap==0.51.0` and `ipykernel` in addition to the pinned requirements.
+- `Project2_Steel_Scratch_Triage_TreeSHAP_Audit.ipynb` – executed walkthrough with model comparison, calibration, threshold selection, held-out results, and the independent TreeSHAP check
 - `analysis.py` – implementation and command-line entry point
 - `data/faults.csv` – unchanged copy of the uploaded source file
-- `results/summary.json` – figures and tables in machine-readable form
+- `results/summary.json` – evaluation metrics, split counts, and model details in machine-readable form
 - `results/*.csv` – CV search scores, threshold sweep, cost sensitivity, predictions and SHAP attributions
 - `results/figures/` – curves and SHAP figures used in the presentation
