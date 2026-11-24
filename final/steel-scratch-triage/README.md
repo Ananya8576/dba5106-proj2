@@ -21,18 +21,7 @@ Python 3.12 was used for the delivered run. Jupyter or VS Code's Jupyter extensi
 
 ## Workflow
 
-```mermaid
-flowchart TD
-    A["1. Check brightness and clean the data<br/>Exclude two inconsistent records and retain 1,939"]
-    B["2. Finalize the features<br/>20 predictors with fault labels excluded"]
-    C["3. Preserve the stratified split<br/>1,164 training / 387 validation / 388 test"]
-    D["4. Tune four model variants<br/>Five-fold cross-validation on training data only"]
-    E["5. Fit candidate Platt mappings<br/>Use out-of-fold training scores"]
-    F["6. Select the model and probability mapping<br/>Highest validation AUC; retain Platt based on validation Brier"]
-    G["7. Set the cutoff using 5:1 loss<br/>Search validation cutoffs, then lock the policy"]
-    H["8. Explain and evaluate the locked policy<br/>Validation TreeSHAP, then held-out testing, then the independent SHAP check"]
-    A --> B --> C --> D --> E --> F --> G --> H
-```
+![Eight-step steel scratch triage workflow from data cleaning and feature preparation through validation, held-out testing, and the independent TreeSHAP check](workflow.png)
 
 ## What was fitted
 
